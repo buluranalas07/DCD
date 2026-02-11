@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { appRouter } from '../router'
 import { createCallerFactory } from '../trpc'
+import { db } from '../context'
 
 const createCaller = createCallerFactory(appRouter)
-const caller = createCaller({})
+const caller = createCaller({
+  uid: 'test-user-id',
+  db,
+})
 
 describe('userRouter', () => {
   describe('create', () => {

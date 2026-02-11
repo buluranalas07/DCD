@@ -1,0 +1,242 @@
+# 📘 DCD Fitness: Technical & Product Specifications
+
+**Version:** 1.0 (MVP)
+**Status:** Approved for Development
+**Architecture:** "The Hytel Way" (Monorepo, Type-Safe, Serverless)
+
+---
+
+## 1. Product Overview
+
+**Mission:** A high-utility, zero-friction training and nutrition log for the **Hybrid Athlete**.
+**Core Philosophy:** "Discipline, Consistency, Dedication."
+**UX Goal:** Data entry must be faster than writing in a physical notebook.
+
+### The Epics
+
+| Epic | Name | Description |
+| --- | --- | --- |
+| **0** | **Secure Gateway** | Authentication, Session Persistence, and User Profile creation. |
+| **1** | **Universal Library** | A hybrid database of "System" exercises (defaults) and "User" exercises (custom). |
+| **2** | **Logic Engine** | The core input forms for Strength (Weight/Reps), Skill (Made/Attempts), and Food. |
+| **3** | **Chronos Diary** | A date-based unified feed of the athlete's daily history. |
+| **4** | **Visual Heatmap** | A consistency calendar visualizing effort over time. |
+
+---
+
+## 2. Technical Architecture
+
+### 2.1 The Stack
+
+* **Monorepo:** Turborepo
+* **Frontend:** React 18, Vite, Tailwind CSS, Shadcn/UI
+* **Backend:** Firebase Functions (Node.js) via tRPC
+* **Database:** Google Firestore (NoSQL)
+* **Auth:** Firebase Auth
+* **State:** TanStack Query (Server State) + Zustand (Client State)
+
+### 2.2 Data Flow Strategy (The "Hybrid" Pattern)
+
+To balance data integrity with UI responsiveness, we use a split approach:
+
+1. **Writes (Mutations):** **Client → tRPC → Firestore.**
+* *Why:* Enforces Zod validation on the server before data touches the DB. prevents malformed logs.
+
+
+2. **Reads (Queries):** **Client → Firestore SDK.**
+* *Why:* Enables `onSnapshot` for real-time updates and offline support without aggressive server polling.
+
+
+
+---
+
+## 3. Data Model (Firestore)
+
+We utilize a **Sub-collection Strategy** for user data to ensure strict privacy and easy security rules, and a **Root Collection** for the shared library.
+
+### 3.1 Collection Structure
+
+| Path | Description | Access Level |
+| --- | --- | --- |
+| `exercises/{exerciseId}` | The Global Library. Contains both System defaults and User customs. | Read: Public/Owner<br>
+
+<br>Write: Admin/Owner |
+| `users/{uid}` | User Profile (Settings, Totals). | Private (Owner only) |
+| `users/{uid}/logs/{logId}` | Daily activity records. Keyed by auto-ID. | Private (Owner only) |
+
+### 3.2 Security Rules (`firestore.rules`)
+
+```javascript
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. User Data & Logs (Sub-collection limits access automatically)
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 2. Exercise Library (Shared + Custom)
+    match /exercises/{exerciseId} {
+      // Read: If it's a system exercise OR it belongs to the user
+      allow read: if request.auth != null && (
+        resource.data.ownerId == 'system' || resource.data.ownerId == request.auth.uid
+      );
+      // Write: Only if the user marks it as their own
+      allow write: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+    }
+  }
+}
+
+```
+
+---
+
+## 4. The Single Source of Truth (`packages/shared`)
+
+All validation logic lives here to be shared between the API and the UI.
+
+### 4.1 Enums
+
+```typescript
+export const ActivityTypeEnum = z.enum(["strength", "skill", "food"]);
+export const MuscleGroupEnum = z.enum(["chest", "back", "legs", "core", "cardio", "skill"]);
+
+```
+
+### 4.2 Exercise Schema (The Library)
+
+```typescript
+export const ExerciseSchema = z.object({
+  id: z.string().optional(),
+  ownerId: z.string(), // 'system' or user's UID
+  name: z.string().min(1, "Name is required"),
+  category: ActivityTypeEnum, 
+  muscleGroup: MuscleGroupEnum.optional(),
+});
+
+```
+
+### 4.3 Activity Log Schema (The Ledger)
+
+*Note: No derived data (percentages) stored in DB. Calculated on client.*
+
+```typescript
+export const StrengthPayload = z.object({
+  exerciseId: z.string(),
+  exerciseName: z.string(), // Cached for display speed
+  sets: z.array(z.object({ 
+    weight: z.number().min(0), 
+    reps: z.number().min(0) 
+  })),
+});
+
+export const SkillPayload = z.object({
+  drillName: z.string(),
+  attempts: z.number().min(1),
+  made: z.number().min(0),
+}).refine((data) => data.made <= data.attempts, {
+  message: "Made cannot exceed Attempts",
+});
+
+export const FoodPayload = z.object({
+  mealType: z.enum(["breakfast", "lunch", "dinner"]),
+  foodName: z.string(),
+  weight: z.number(), // grams
+});
+
+export const ActivityLogSchema = z.object({
+  id: z.string().optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  type: ActivityTypeEnum,
+  payload: z.discriminatedUnion("type", [
+    z.object({ type: z.literal("strength"), ...StrengthPayload.shape }),
+    z.object({ type: z.literal("skill"), ...SkillPayload.shape }),
+    z.object({ type: z.literal("food"), ...FoodPayload.shape }),
+  ]),
+  createdAt: z.any(), // Serialized timestamp
+});
+
+```
+
+---
+
+## 5. Backend Specifications (`apps/functions`)
+
+### tRPC Routers
+
+**Context:** Authenticates Firebase Token, injects `ctx.uid`.
+
+1. **`exerciseRouter`**
+* `create`: Stores new exercise with `ownerId: ctx.uid`.
+* `list`: Queries `exercises` where `ownerId == 'system' || ownerId == ctx.uid`.
+
+
+2. **`logRouter`**
+* `create`: Validates `ActivityLogSchema`. Writes to `users/{uid}/logs`.
+* `delete`: Deletes from `users/{uid}/logs`.
+
+
+
+---
+
+## 6. Frontend Specifications (`apps/web`)
+
+### Visual System ("Soft Industrial")
+
+* **Base:** Zinc-950 (Background), Zinc-50 (Text).
+* **Components:** `LabCard` (Glassmorphism), `LabButton` (Minimalist).
+
+### Key State Stores (`zustand`)
+
+1. **`useDateStore`**: Holds `selectedDate` string. Controls the "Chronos Diary."
+2. **`useLibraryStore`**: Caches the list of exercises to prevent refetching on every dropdown open.
+
+### Navigation Logic
+
+* **Public:** `/landing`
+* **Auth:** `/login`, `/register`
+* **Private:**
+* `/dashboard` (The Diary & Heatmap)
+* `/library` (Manage Exercises)
+* `/settings` (Profile)
+
+
+
+---
+
+## 7. The 72-Hour Execution Plan
+
+### Day 1: The Foundation
+
+* **Goal:** User can Log In and see the Exercise Library.
+* **Tasks:**
+1. Initialize Firebase Auth Provider.
+2. Deploy Firestore Rules.
+3. Seed Firestore with 10 "System" exercises (Bench, Squat, Run, etc.).
+4. Build `exerciseRouter.list` in tRPC.
+5. Build "My Library" UI.
+
+
+
+### Day 2: The Core Loop
+
+* **Goal:** User can Log Data and see it on a specific date.
+* **Tasks:**
+1. Implement `ActivityLogSchema` in Shared.
+2. Build the "Add Log" Modal (Form logic for Strength/Skill/Food).
+3. Build `logRouter.create`.
+4. Build the "Daily Diary" list component using `useDateStore`.
+
+
+
+### Day 3: Visualization & Polish
+
+* **Goal:** The "DCD" Heatmap and styling.
+* **Tasks:**
+1. Build the Calendar component (fetching all logs for current month).
+2. Implement "Streak" logic (Green dot for days with logs).
+3. Final UI Cleanup (Loading skeletons, Success toasts).
+
+
+
+---

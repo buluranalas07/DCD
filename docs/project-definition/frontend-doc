@@ -1,0 +1,82 @@
+# 🎨 FILE 1: FRONTEND TECHNICAL SPECIFICATIONS
+
+**Scope:** `apps/web` and `packages/ui`
+**Aesthetic:** "Soft Industrial" (Black/White, Rounded Corners, Clean)
+
+## 1. Visual Design System (`packages/ui`)
+
+* **Color Palette (`tailwind.config.ts`):**
+* **Background:** `zinc-950` (The void)
+* **Surface:** `zinc-900` (Cards/Modals)
+* **Border:** `zinc-800` (Subtle definition)
+* **Text Primary:** `zinc-50` (High contrast)
+* **Text Secondary:** `zinc-400` (Metadata)
+
+
+* **Typography:**
+* **Font:** `Google Sans` (tight tracking).
+
+
+* **Shape & Form:**
+* **Radius:** `rounded-xl` for large containers (Cards, Modals).
+* **Radius:** `rounded-md` for interactive elements (Buttons, Inputs).
+
+
+
+## 2. Shared Component Library (`packages/ui/src/components`)
+
+* **`LabButton.tsx`:**
+* **Base:** `px-4 py-2 font-medium transition-all rounded-md`.
+* **Variant Primary:** `bg-zinc-50 text-zinc-950 hover:bg-zinc-200`.
+* **Variant Outline:** `border border-zinc-800 text-zinc-50 hover:bg-zinc-900`.
+
+
+* **`LabCard.tsx`:**
+* **Base:** `p-6 border border-zinc-800 bg-zinc-900/50 backdrop-blur-sm rounded-xl`.
+* **Motion:** Wrap in `framer-motion` for "enter" animations.
+
+
+* **`LabNavbar.tsx`:**
+* **Behavior:** Sticky top (`sticky top-0 z-50`), blurred background (`bg-zinc-950/80 backdrop-blur-md`), bottom border (`border-b border-zinc-800`).
+* **Links:** Smooth scroll anchors to `#features`, `#method`, `#login`.
+
+
+
+## 3. The Landing Page (`apps/web/src/routes/landing.tsx`)
+
+* **Section 1: Hero (`#home`):**
+* **Centerpiece:** "Talent is Cheap." (Static `h1`).
+* **Dynamic:** `Typewriter` component cycling "Discipline/Commitment/Dedication is Costly."
+* **CTA:** `[ ENTER LAB ]` (Primary Button) -> Scrolls to `#login` or opens Modal.
+
+
+* **Section 2: Features (`#features`):**
+* **Layout:** 3-Column Grid.
+* **Cards:**
+* **MEASURE:** "Quantify daily output." (Bar Chart Icon)
+* **ANALYZE:** "Visualize the streak." (Activity Icon)
+* **EVOLVE:** "Optimize the feedback loop." (Trending Up Icon)
+
+
+
+
+* **Section 3: Auth Gateway (`#login`):**
+* **UI:** A centered `LabCard` with rounded corners.
+* **Action:** "Sign In to Access Dashboard".
+
+
+
+## 4. The Dashboard (`apps/web/src/routes/dashboard.tsx`)
+
+* **State Management:**
+* `useDateStore`: Tracks the active viewing date.
+
+
+* **Layout:**
+* **Header:** Date Navigation `< Prev | Today | Next >`.
+* **Body:** A vertical feed of `LogCard` components.
+* **Floating Action:** A bottom-right fixed `[ + ]` button (`rounded-full`, `w-14 h-14`) to trigger the "Add Log" modal.
+
+
+
+---

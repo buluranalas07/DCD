@@ -1,0 +1,87 @@
+Absolutely. In a production-ready monorepo, **Auth** isn't just a login screen; it's the "Security Perimeter" that ensures every piece of data (every rep, every meal) is private and correctly mapped to the right athlete.
+
+Here is the updated PDD with **Epic 0: The Secure Gateway**, integrated using the industry-standard **Firebase Auth + WIF** flow already present in your boilerplate.
+
+---
+
+# Product Design Document: DCD Fitness (MVP)
+
+**Mission:** A high-utility, zero-friction training and nutrition log for the **Hybrid Athlete**.
+**Technical Philosophy:** "The Hytel Way"—Type-safe, monorepo-based, serverless architecture.
+
+---
+
+## 🛠 Epics & User Stories
+
+### EPIC 0: The Secure Gateway (Identity & Access)
+
+*Goal: Ensure a personalized and secure experience where user data is siloed and protected.*
+
+* **US 0.1 (Authentication):** As a user, I want to sign up and log in using my email/password so that my training logs are saved to my private account.
+* **US 0.2 (Session Persistence):** As a user, I want the app to remember my session so that I don't have to log in every time I open the app on my phone.
+* **US 0.3 (Data Privacy):** As a user, I want to ensure that only I can read or write my training and nutrition logs.
+* **US 0.4 (Profile Setup):** As a new user, I want to set my display name and primary sport (e.g., Basketball) during my first session to personalize my dashboard.
+
+### EPIC 1: Universal Training Engine (Strength & Skill)
+
+*Goal: Provide a flexible logging system for diverse athletic modalities.*
+
+* **US 1.1 (Exercise Library):** As an athlete, I want to create and save custom exercises to a personal library for rapid selection during workouts.
+* **US 1.2 (Strength Logger):** As a user, I want to log sets, reps, and weight for strength movements to track progressive overload.
+* **US 1.3 (Skill Logger):** As a hybrid athlete, I want to log "Attempts" vs. "Made" for skill drills (e.g., Free Throws) to track accuracy.
+
+### EPIC 2: The Minimalist Nutrition Vault
+
+*Goal: Track daily fuel intake without the complexity of a 3rd party database.*
+
+* **US 2.1 (Meal Categories):** As a user, I want to log food under Breakfast, Lunch, or Dinner categories.
+* **US 2.2 (Standardized Entry):** As a user, I want to record food name and weight to maintain an objective diary of my intake.
+
+### EPIC 3: The Chronos Diary (Daily Hub)
+
+*Goal: A centralized view of the athlete’s daily performance.*
+
+* **US 3.1 (Daily View):** As a user, I want to see a unified list of all training and food logs for the selected date.
+* **US 3.2 (Temporal Navigation):** As a user, I want to use a date-picker or arrows to navigate through my training history.
+
+### EPIC 4: The DCD Heatmap (Visual Consistency)
+
+*Goal: Visualizing the "Discipline, Consistency, Dedication" philosophy.*
+
+* **US 4.1 (Activity Heatmap):** As a user, I want a monthly calendar view color-coded by activity type (Red: Strength, Blue: Skill, Orange: Both).
+* **US 4.2 (Consistency Tracking):** As a user, I want to see my training frequency at a glance to maintain high accountability.
+
+---
+
+## 📐 Technical Implementation Detail (Auth Specifics)
+
+| Layer | Implementation |
+| --- | --- |
+| **Auth Provider** | **Firebase Auth** (Managed by the `FirebaseProvider.tsx` in your boilerplate). |
+| **Protected Routes** | React Router guards that redirect unauthenticated users to `/login`. |
+| **Database Security** | **Firestore Security Rules** that check `request.auth.uid == resource.data.userId`. |
+| **API Security** | **tRPC Middleware** that verifies the Firebase ID Token before allowing any writes. |
+
+---
+
+## 📅 The 72-Hour Sprint Board (Revised)
+
+**Day 1: Identity & The Library**
+
+* **Auth:** Hook up the login/signup forms to Firebase Auth.
+* **Core:** Build the "My Exercises" Library CRUD.
+* *Milestone:* A user can log in and save their first custom exercise.
+
+**Day 2: The Logic Engine (Logging & Diary)**
+
+* **Logging:** Build the Strength, Skill, and Food input forms.
+* **Diary:** Build the main Diary page with the date-navigation logic.
+* *Milestone:* A user can log a full "Hybrid" day and view it in the diary.
+
+**Day 3: Analytics & Polish**
+
+* **Heatmap:** Build the Streaks page using the color-coded calendar logic.
+* **UI/UX:** Add loading skeletons, success toasts, and the "Coming Soon" calorie mocks.
+* *Milestone:* The app is ready for grading and deployment.
+
+---

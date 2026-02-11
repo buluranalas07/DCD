@@ -1,0 +1,152 @@
+# 🚀 DCD Fitness: 72-Hour TDD Sprint Board
+
+**Philosophy:** *Infra → Schema → API → UI (Public) → UI (Private).*
+**Status:** Approved.
+
+---
+
+## 🏗️ Phase 0: Infrastructure & Provisioning
+
+*Goal: Establish the serverless environment.*
+*Scope: Google Cloud Console & Local Config*
+
+* [ ] **0.1: Firebase Project Setup**
+* Create Project `dcd-fitness-mvp` in Firebase Console.
+* **Auth:** Enable "Email/Password" and "Google" providers.
+* **Firestore:** Create Database (Production Mode) -> Select Region (e.g., `us-central1`).
+
+
+* [ ] **0.2: Local Environment**
+* Copy Firebase Web Config (`apiKey`, `appId`, etc.) to `apps/web/.env.local`.
+* Generate Service Account Key for Admin SDK and save to `apps/functions/.env`.
+
+
+* [ ] **0.3: Security Rules Deployment**
+* Copy the **Sub-collection Rules** (from Tech Doc) to `firestore.rules`.
+* Run `firebase deploy --only firestore:rules`.
+
+
+
+---
+
+## 🟢 Phase 1: The Iron Core (Shared & Schema)
+
+*Goal: Define the immutable rules of the application.*
+*Scope: `packages/shared*`
+
+* [ ] **1.1: Environment & Config**
+* Initialize `packages/shared` with `zod` and `vitest`.
+
+
+* [ ] **1.2: The Library Schema (Test & Code)**
+* **Red:** Write test asserting `Exercise` must have `ownerId` (User vs System).
+* **Green:** Export `ExerciseSchema` and `MuscleGroupEnum`.
+
+
+* [ ] **1.3: The Log Schema (Test & Code)**
+* **Red:** Write test asserting `SkillPayload` fails if `made` > `attempts`.
+* **Green:** Export `ActivityLogSchema` using Zod Discriminated Unions.
+
+
+* [ ] **1.4: Type Generation**
+* Run `pnpm build` to generate TS types (`ActivityLog`, `Exercise`) for the monorepo.
+
+
+
+---
+
+## 🟡 Phase 2: The Secure Backend (API Layer)
+
+*Goal: Build the "Write" operations and Security.*
+*Scope: `apps/functions*`
+
+* [ ] **2.1: The Seeding Script (Crucial)**
+* Write a script `scripts/seed-system.ts` to push 10 default exercises (Bench, Squat, Run) to `exercises/{id}` with `ownerId: 'system'`.
+* Run script to populate Firestore.
+
+
+* [ ] **2.2: Context & Auth Middleware**
+* Implement `createContext` to verify Firebase ID Token.
+* Implement `protectedProcedure` middleware (throws `TRPCError: UNAUTHORIZED` if no user).
+
+
+* [ ] **2.3: Exercise Router (The Hybrid Query)**
+* **Logic:** Query Firestore `exercises` where `ownerId == 'system'` OR `ownerId == ctx.uid`.
+
+
+* [ ] **2.4: Log Router (The Write Gate)**
+* **Logic:** `create` mutation. Takes `ActivityLogSchema`. Writes to path `users/{ctx.uid}/logs/{autoId}`.
+
+
+
+---
+
+## 🔵 Phase 3: The Public Frontend (UI & Landing)
+
+*Goal: Build the Design System and the "Front Door".*
+*Scope: `apps/web` & `packages/ui*`
+
+* [ ] **3.1: Design System ("Soft Industrial")**
+* Update `tailwind.config.ts` (Zinc-950/900/50).
+* Build `LabCard` (Glassmorphism), `LabButton` (Primary/Ghost), `LabInput` (Underline style).
+
+
+* [ ] **3.2: The Landing Page (`/`)**
+* **Hero Section:** Implement the "Talent is Cheap / Discipline is Costly" Typewriter effect.
+* **Features Grid:** 3 `LabCard` components (Measure, Analyze, Evolve).
+* **Auth Gateway:** Create the `AuthForm` component (Login/Register tabs) that interacts with `firebase/auth`.
+
+
+* [ ] **3.3: Routing & Guards**
+* Setup `react-router-dom`.
+* Create `ProtectedRoute` component: Redirects to `/` if `auth.currentUser` is null.
+
+
+
+---
+
+## 🟣 Phase 4: The Private Dashboard (Feature Loop)
+
+*Goal: Connect the pipes. The "Hybrid" implementation.*
+*Scope: `apps/web*`
+
+* [ ] **4.1: State Management**
+* Create `useDateStore` (Zustand) to manage `selectedDate` string.
+* Build `<DateNavigation />` component (Prev/Next Day).
+
+
+* [ ] **4.2: The "Read" Pipe (Real-time)**
+* Create hook `useDailyLogs(date)`.
+* **Implementation:** Use Firebase SDK `onSnapshot` on `users/{uid}/logs` filtered by Date.
+
+
+* [ ] **4.3: The "Write" Pipe (Validation)**
+* Build `AddLogModal` using `react-hook-form`.
+* Connect submission to `trpc.log.create.useMutation`.
+
+
+* [ ] **4.4: The Library Interface**
+* Fetch exercises via `trpc.exercise.list.useQuery`.
+
+
+
+---
+
+## 🟠 Phase 5: Visualization & Polish
+
+*Goal: The "Heatmap" and final UX touches.*
+*Scope: `apps/web*`
+
+* [ ] **5.1: The Heatmap Logic**
+* Create hook `useMonthlyStatus(year, month)`.
+* **Query:** Fetch all logs for the month (via Firebase SDK).
+* **Transform:** Reduce logs into a Map: `{'2023-10-01': 'strength'}`.
+
+
+* [ ] **5.2: The UI Implementation**
+* Implement `Shadcn Calendar`.
+* Apply modifiers to color-code days based on the Map.
+
+
+
+---
