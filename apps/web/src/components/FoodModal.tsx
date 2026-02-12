@@ -1,5 +1,8 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '../lib/firebase'
+import { useAuth } from '../contexts/AuthContext'
 import { LabButton } from './LabButton'
 import { LabCard } from './LabCard'
 
@@ -9,28 +12,41 @@ interface FoodModalProps {
 }
 
 export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
+  const { currentUser } = useAuth()
+  const [mealType, setMealType] = useState('')
   const [description, setDescription] = useState('')
   const [weight, setWeight] = useState('')
   const [unit, setUnit] = useState('g')
+  const [saving, setSaving] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!currentUser) return
 
-    const foodLog = {
-      description,
-      weight: parseFloat(weight),
-      unit,
-      timestamp: new Date().toISOString(),
+    setSaving(true)
+    try {
+      const now = new Date()
+      const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      await addDoc(collection(db, 'users', currentUser.uid, 'foodLogs'), {
+        mealType,
+        description,
+        weight: parseFloat(weight),
+        unit,
+        dateKey,
+        createdAt: serverTimestamp(),
+      })
+
+      // Reset form
+      setMealType('')
+      setDescription('')
+      setWeight('')
+      setUnit('g')
+      onClose()
+    } catch (error) {
+      console.error('Error saving food log:', error)
+    } finally {
+      setSaving(false)
     }
-
-    console.log('Food Log:', foodLog)
-    // TODO: Save to Firestore
-
-    // Reset form
-    setDescription('')
-    setWeight('')
-    setUnit('g')
-    onClose()
   }
 
   if (!isOpen) return null
@@ -77,9 +93,36 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Meal Type */}
+                  <div>
+                    <label
+                      htmlFor="mealType"
+                      className="block text-sm font-medium text-zinc-300 mb-2"
+                    >
+                      Meal
+                    </label>
+                    <select
+                      id="mealType"
+                      required
+                      value={mealType}
+                      onChange={e => setMealType(e.target.value)}
+                      className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-50 focus:outline-none focus:border-orange-500 transition-colors"
+                    >
+                      <option value="" disabled>
+                        Select a meal
+                      </option>
+                      <option value="breakfast">Breakfast</option>
+                      <option value="lunch">Lunch</option>
+                      <option value="dinner">Dinner</option>
+                    </select>
+                  </div>
+
                   {/* Description */}
                   <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-zinc-300 mb-2">
+                    <label
+                      htmlFor="description"
+                      className="block text-sm font-medium text-zinc-300 mb-2"
+                    >
                       Description
                     </label>
                     <textarea
@@ -96,7 +139,10 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
                   {/* Weight and Unit */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="weight" className="block text-sm font-medium text-zinc-300 mb-2">
+                      <label
+                        htmlFor="weight"
+                        className="block text-sm font-medium text-zinc-300 mb-2"
+                      >
                         Weight
                       </label>
                       <input
@@ -113,7 +159,10 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
                     </div>
 
                     <div>
-                      <label htmlFor="unit" className="block text-sm font-medium text-zinc-300 mb-2">
+                      <label
+                        htmlFor="unit"
+                        className="block text-sm font-medium text-zinc-300 mb-2"
+                      >
                         Unit
                       </label>
                       <select
@@ -130,8 +179,12 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
                   </div>
 
                   {/* Submit Button */}
-                  <LabButton type="submit" className="w-full bg-orange-500 text-black border-none hover:bg-orange-400 mt-6">
-                    Save Log
+                  <LabButton
+                    type="submit"
+                    disabled={saving}
+                    className="w-full bg-orange-500 text-black border-none hover:bg-orange-400 mt-6 disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Save Log'}
                   </LabButton>
                 </form>
               </LabCard>

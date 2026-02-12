@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { Layout } from '../components/Layout'
@@ -26,7 +26,6 @@ export const ProgressPage: React.FC = () => {
   const { currentUser } = useAuth()
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
-  const [currentMonth, setCurrentMonth] = useState(new Date())
 
   // Fetch activity logs from Firestore
   useEffect(() => {
@@ -34,20 +33,24 @@ export const ProgressPage: React.FC = () => {
 
     const fetchLogs = async () => {
       try {
-        // TODO: Replace with actual collection name and query
-        // const logsRef = collection(db, 'activityLogs')
-        // const q = query(logsRef, where('userId', '==', currentUser.uid))
-        // const querySnapshot = await getDocs(q)
-
-        // Mock data for now
-        const mockLogs: ActivityLog[] = [
-          { id: '1', date: new Date(2026, 1, 10), type: 'workout' },
-          { id: '2', date: new Date(2026, 1, 10), type: 'skill' },
-          { id: '3', date: new Date(2026, 1, 11), type: 'workout' },
-          { id: '4', date: new Date(2026, 1, 15), type: 'skill' },
-        ]
-
-        setActivityLogs(mockLogs)
+        const logsRef = collection(db, 'users', currentUser.uid, 'activityLogs')
+        const snapshot = await getDocs(logsRef)
+        const logs: ActivityLog[] = snapshot.docs.map(doc => {
+          const data = doc.data()
+          const [y, m, d] = data.dateKey.split('-').map(Number)
+          return {
+            id: doc.id,
+            date: new Date(y, m - 1, d),
+            type:
+              data.type === 'strength' ? ('workout' as ActivityType) : ('skill' as ActivityType),
+            exercise: data.exercise,
+            sets: data.sets,
+            reps: data.reps,
+            attempts: data.attempts,
+            made: data.made,
+          }
+        })
+        setActivityLogs(logs)
       } catch (error) {
         console.error('Error fetching activity logs:', error)
       }
@@ -142,8 +145,39 @@ export const ProgressPage: React.FC = () => {
                   <Calendar
                     selected={selectedDate}
                     onSelect={handleDateSelect}
+                    modifiers={{
+                      both: categorizedDates.both,
+                      workoutOnly: categorizedDates.workoutOnly,
+                      skillOnly: categorizedDates.skillOnly,
+                    }}
+                    modifiersClassNames={{
+                      both: 'progress-day-both',
+                      workoutOnly: 'progress-day-workout',
+                      skillOnly: 'progress-day-skill',
+                    }}
                   />
                 </div>
+
+                <style>{`
+                  .progress-day-both {
+                    background-color: rgb(249 115 22 / 0.3) !important;
+                    color: rgb(249 115 22) !important;
+                    font-weight: 600;
+                    border-radius: 0.375rem;
+                  }
+                  .progress-day-workout {
+                    background-color: rgb(59 130 246 / 0.3) !important;
+                    color: rgb(59 130 246) !important;
+                    font-weight: 600;
+                    border-radius: 0.375rem;
+                  }
+                  .progress-day-skill {
+                    background-color: rgb(168 85 247 / 0.3) !important;
+                    color: rgb(168 85 247) !important;
+                    font-weight: 600;
+                    border-radius: 0.375rem;
+                  }
+                `}</style>
 
                 {/* Legend */}
                 <div className="mt-6 space-y-2">
@@ -198,7 +232,7 @@ export const ProgressPage: React.FC = () => {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',
-                        day: 'numeric'
+                        day: 'numeric',
                       })
                     : 'Select a Date'}
                 </motion.h2>
@@ -214,11 +248,13 @@ export const ProgressPage: React.FC = () => {
                         className="p-4 bg-zinc-900 rounded-lg border border-zinc-800"
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            activity.type === 'workout'
-                              ? 'bg-blue-500/20 text-blue-500'
-                              : 'bg-purple-500/20 text-purple-500'
-                          }`}>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-semibold ${
+                              activity.type === 'workout'
+                                ? 'bg-blue-500/20 text-blue-500'
+                                : 'bg-purple-500/20 text-purple-500'
+                            }`}
+                          >
                             {activity.type.toUpperCase()}
                           </span>
                         </div>
@@ -235,7 +271,8 @@ export const ProgressPage: React.FC = () => {
 
                         {activity.type === 'skill' && (
                           <p className="text-xs text-zinc-400 mt-1">
-                            {activity.made}/{activity.attempts} made ({((activity.made! / activity.attempts!) * 100).toFixed(1)}%)
+                            {activity.made}/{activity.attempts} made (
+                            {((activity.made! / activity.attempts!) * 100).toFixed(1)}%)
                           </p>
                         )}
                       </motion.div>
@@ -292,9 +329,7 @@ export const ProgressPage: React.FC = () => {
             >
               <LabCard className="p-6">
                 <h3 className="text-sm font-medium text-zinc-400 mb-2">Active Days</h3>
-                <p className="text-3xl font-bold text-zinc-50">
-                  {Object.keys(activityMap).length}
-                </p>
+                <p className="text-3xl font-bold text-zinc-50">{Object.keys(activityMap).length}</p>
               </LabCard>
             </motion.div>
           </div>

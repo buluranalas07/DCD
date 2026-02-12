@@ -17,42 +17,73 @@ export const DashboardPage: React.FC = () => {
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto p-8 space-y-12">
           {/* Header */}
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-50">
-              Welcome back, {currentUser?.displayName || 'Athlete'}!
-            </h1>
-            <p className="text-zinc-400 mt-1">Let's track your progress today</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex items-start justify-between"
+          >
+            <div>
+              <h1 className="text-2xl font-bold text-zinc-50">
+                Welcome back, {currentUser?.displayName || 'Athlete'}!
+              </h1>
+              <p className="text-zinc-400 mt-1">Let's track your progress today</p>
+            </div>
+
+            {/* Streak Counter */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-full">
+              <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z" />
+              </svg>
+              <span className="text-sm font-bold text-zinc-50">0</span>
+            </div>
+          </motion.div>
 
           {/* Today's Overview Section */}
-          <section className="space-y-6">
+          <motion.section
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
             <div className="mb-6">
               <h2 className="text-3xl font-bold text-zinc-50">Today's Overview</h2>
               <p className="text-zinc-400 mt-1">Track your daily progress</p>
             </div>
 
             {/* Calories Card - Coming Soon */}
-            <LabCard className="relative p-6 overflow-hidden">
-              {/* Coming Soon Badge */}
-              <div className="absolute top-4 right-4">
-                <span className="px-3 py-1 bg-zinc-800 text-zinc-400 text-xs font-medium rounded-full">
-                  Coming Soon
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-zinc-400">
-                  <svg className="w-12 h-12 opacity-20" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z" />
-                  </svg>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+            >
+              <LabCard className="relative p-6 overflow-hidden">
+                {/* Coming Soon Badge */}
+                <div className="absolute top-4 right-4">
+                  <span className="px-3 py-1 bg-zinc-800 text-zinc-400 text-xs font-medium rounded-full">
+                    Coming Soon
+                  </span>
                 </div>
-              </div>
-              <h3 className="text-xl font-bold text-zinc-50 mb-2">Calories</h3>
-              <p className="text-3xl font-black text-zinc-300 opacity-30">2450 / 3000</p>
-            </LabCard>
+
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-zinc-400">
+                    <svg className="w-12 h-12 opacity-20" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-zinc-50 mb-2">Calories</h3>
+                <p className="text-3xl font-black text-zinc-300 opacity-30">2450 / 3000</p>
+              </LabCard>
+            </motion.div>
 
             {/* Workouts and Nutrition Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
               {/* Workouts Card */}
               <LabCard
                 hover
@@ -104,11 +135,15 @@ export const DashboardPage: React.FC = () => {
                   <h3 className="text-lg font-bold text-zinc-50">Nutrition Log</h3>
                 </div>
               </LabCard>
-            </div>
-          </section>
+            </motion.div>
+          </motion.section>
 
           {/* Discover Section */}
-          <section>
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+          >
             <div className="mb-6">
               <h2 className="text-3xl font-bold text-zinc-50">Discover</h2>
             </div>
@@ -167,7 +202,7 @@ export const DashboardPage: React.FC = () => {
                 label="Community"
               />
             </div>
-          </section>
+          </motion.section>
         </div>
 
         {/* Modals */}

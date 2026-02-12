@@ -5,15 +5,24 @@ import 'react-day-picker/dist/style.css'
 interface CalendarProps {
   selected?: Date
   onSelect?: (date: Date | undefined) => void
+  modifiers?: Record<string, Date[]>
+  modifiersClassNames?: Record<string, string>
 }
 
-export const Calendar: React.FC<CalendarProps> = ({ selected, onSelect }) => {
+export const Calendar: React.FC<CalendarProps> = ({
+  selected,
+  onSelect,
+  modifiers,
+  modifiersClassNames,
+}) => {
   return (
     <div className="calendar-custom flex justify-center items-center w-full">
       <DayPicker
         mode="single"
         selected={selected}
         onSelect={onSelect}
+        modifiers={modifiers}
+        modifiersClassNames={modifiersClassNames}
         numberOfMonths={1}
         className="p-4"
         classNames={{

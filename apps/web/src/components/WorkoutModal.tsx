@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, getDocs, addDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { useAuth } from '../contexts/AuthContext'
 import { LabButton } from './LabButton'
 import { LabCard } from './LabCard'
 
@@ -22,6 +23,7 @@ interface Exercise {
 }
 
 export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) => {
+  const { currentUser } = useAuth()
   const [step, setStep] = useState<Step>(1)
   const [workoutType, setWorkoutType] = useState<WorkoutType>(null)
   const [selectedExercise, setSelectedExercise] = useState<string>('')
@@ -29,10 +31,16 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [loadingExercises, setLoadingExercises] = useState(false)
 
+  // Create custom exercise fields
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [customName, setCustomName] = useState('')
+  const [customCategory, setCustomCategory] = useState<'strength' | 'skill' | ''>('')
+  const [customMuscleGroup, setCustomMuscleGroup] = useState('')
+  const [savingCustom, setSavingCustom] = useState(false)
+
   // Strength fields
   const [sets, setSets] = useState('')
   const [reps, setReps] = useState('')
-  const [weight, setWeight] = useState('')
 
   // Skill fields
   const [attempts, setAttempts] = useState('')
@@ -48,7 +56,7 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
         const querySnapshot = await getDocs(q)
 
         const fetchedExercises: Exercise[] = []
-        querySnapshot.forEach((doc) => {
+        querySnapshot.forEach(doc => {
           fetchedExercises.push({ id: doc.id, ...doc.data() } as Exercise)
         })
 
@@ -69,8 +77,7 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
   const filteredExercises = useMemo(() => {
     return exercises.filter(
       (ex: Exercise) =>
-        ex.category === workoutType &&
-        ex.name.toLowerCase().includes(searchQuery.toLowerCase())
+        ex.category === workoutType && ex.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
   }, [workoutType, searchQuery, exercises])
 
@@ -84,14 +91,52 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
     return '0'
   }, [attempts, made])
 
+  const resetCreateForm = () => {
+    setShowCreateForm(false)
+    setCustomName('')
+    setCustomCategory('')
+    setCustomMuscleGroup('')
+  }
+
+  const handleCreateCustom = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!currentUser || !customCategory) return
+
+    setSavingCustom(true)
+    try {
+      const docRef = await addDoc(collection(db, 'exercises'), {
+        name: customName,
+        category: customCategory,
+        muscleGroup: customMuscleGroup,
+        ownerId: currentUser.uid,
+      })
+
+      const newExercise: Exercise = {
+        id: docRef.id,
+        name: customName,
+        category: customCategory,
+        muscleGroup: customMuscleGroup,
+        ownerId: currentUser.uid,
+      }
+
+      setExercises(prev => [...prev, newExercise])
+      resetCreateForm()
+      handleExerciseSelect(docRef.id)
+    } catch (error) {
+      console.error('Error creating exercise:', error)
+    } finally {
+      setSavingCustom(false)
+    }
+  }
+
   const resetModal = () => {
     setStep(1)
     setWorkoutType(null)
     setSelectedExercise('')
     setSearchQuery('')
+    resetCreateForm()
     setSets('')
     setReps('')
-    setWeight('')
     setAttempts('')
     setMade('')
   }
@@ -111,8 +156,12 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
     setStep(3)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!currentUser) return
+
+    const now = new Date()
+    const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
     const workoutLog = {
       type: workoutType,
@@ -121,18 +170,21 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
         ? {
             sets: parseInt(sets),
             reps: parseInt(reps),
-            weight: parseFloat(weight),
           }
         : {
             attempts: parseInt(attempts),
             made: parseInt(made),
             percentage: parseFloat(successPercentage),
           }),
+      dateKey,
       timestamp: new Date().toISOString(),
     }
 
-    console.log('Workout Log:', workoutLog)
-    // TODO: Save to Firestore
+    try {
+      await addDoc(collection(db, 'users', currentUser.uid, 'activityLogs'), workoutLog)
+    } catch (error) {
+      console.error('Error saving workout log:', error)
+    }
 
     handleClose()
   }
@@ -197,7 +249,7 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
                         </div>
                         <div className="text-left">
                           <h3 className="text-lg font-bold text-zinc-50">Strength</h3>
-                          <p className="text-sm text-zinc-400">Sets, Reps, Weight</p>
+                          <p className="text-sm text-zinc-400">Sets, Reps</p>
                         </div>
                       </div>
                     </button>
@@ -222,52 +274,139 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
                 {/* Step 2: Exercise Selection */}
                 {step === 2 && (
                   <div className="space-y-4">
-                    {/* Search */}
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Search exercises..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-50 placeholder-zinc-500 focus:outline-none focus:border-orange-500 transition-colors"
-                      />
-                    </div>
+                    {showCreateForm ? (
+                      <form onSubmit={handleCreateCustom} className="space-y-4">
+                        <p className="text-zinc-300">Create a new exercise:</p>
 
-                    {/* Exercise List */}
-                    <div className="max-h-64 overflow-y-auto space-y-2">
-                      {loadingExercises ? (
-                        <div className="text-center py-8 text-zinc-400">
-                          Loading exercises...
+                        {/* Name */}
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-300 mb-2">
+                            Name
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={customName}
+                            onChange={e => setCustomName(e.target.value)}
+                            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-50 placeholder-zinc-500 focus:outline-none focus:border-orange-500 transition-colors"
+                            placeholder="e.g., Barbell Curl"
+                          />
                         </div>
-                      ) : filteredExercises.length > 0 ? (
-                        filteredExercises.map((exercise: Exercise) => (
-                          <button
-                            key={exercise.id}
-                            onClick={() => handleExerciseSelect(exercise.id!)}
-                            className="w-full p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-orange-500 rounded transition-all text-left"
+
+                        {/* Category */}
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-300 mb-2">
+                            Category
+                          </label>
+                          <select
+                            required
+                            value={customCategory}
+                            onChange={e =>
+                              setCustomCategory(e.target.value as 'strength' | 'skill')
+                            }
+                            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-50 focus:outline-none focus:border-orange-500 transition-colors"
                           >
-                            <span className="text-zinc-50 font-medium">{exercise.name}</span>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="text-center py-8 text-zinc-400">
-                          No exercises found
+                            <option value="" disabled>
+                              Select category
+                            </option>
+                            <option value="strength">Strength</option>
+                            <option value="skill">Skill</option>
+                          </select>
                         </div>
-                      )}
-                    </div>
 
-                    {/* Create Custom Button */}
-                    <button className="w-full p-4 bg-zinc-900 hover:bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-orange-500 rounded transition-all">
-                      <span className="text-orange-500 font-medium">+ Create Custom Exercise</span>
-                    </button>
+                        {/* Muscle Group */}
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-300 mb-2">
+                            Muscle Group
+                          </label>
+                          <select
+                            required
+                            value={customMuscleGroup}
+                            onChange={e => setCustomMuscleGroup(e.target.value)}
+                            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-50 focus:outline-none focus:border-orange-500 transition-colors"
+                          >
+                            <option value="" disabled>
+                              Select muscle group
+                            </option>
+                            <option value="push">Push</option>
+                            <option value="pull">Pull</option>
+                            <option value="legs">Legs</option>
+                            <option value="core">Core</option>
+                            <option value="skill">Skill</option>
+                          </select>
+                        </div>
 
-                    {/* Back Button */}
-                    <LabButton
-                      onClick={() => setStep(1)}
-                      className="w-full bg-transparent border border-zinc-700 text-zinc-50 hover:bg-zinc-900"
-                    >
-                      Back
-                    </LabButton>
+                        {/* Form Buttons */}
+                        <div className="flex gap-3 mt-6">
+                          <LabButton
+                            type="button"
+                            onClick={resetCreateForm}
+                            className="flex-1 bg-transparent border border-zinc-700 text-zinc-50 hover:bg-zinc-900"
+                          >
+                            Cancel
+                          </LabButton>
+                          <LabButton
+                            type="submit"
+                            disabled={savingCustom}
+                            className="flex-1 bg-orange-500 text-black border-none hover:bg-orange-400 disabled:opacity-50"
+                          >
+                            {savingCustom ? 'Saving...' : 'Create'}
+                          </LabButton>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        {/* Search */}
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Search exercises..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-50 placeholder-zinc-500 focus:outline-none focus:border-orange-500 transition-colors"
+                          />
+                        </div>
+
+                        {/* Exercise List */}
+                        <div className="max-h-64 overflow-y-auto space-y-2">
+                          {loadingExercises ? (
+                            <div className="text-center py-8 text-zinc-400">
+                              Loading exercises...
+                            </div>
+                          ) : filteredExercises.length > 0 ? (
+                            filteredExercises.map((exercise: Exercise) => (
+                              <button
+                                key={exercise.id}
+                                onClick={() => handleExerciseSelect(exercise.id!)}
+                                className="w-full p-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-orange-500 rounded transition-all text-left"
+                              >
+                                <span className="text-zinc-50 font-medium">{exercise.name}</span>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="text-center py-8 text-zinc-400">No exercises found</div>
+                          )}
+                        </div>
+
+                        {/* Create Custom Button */}
+                        <button
+                          onClick={() => setShowCreateForm(true)}
+                          className="w-full p-4 bg-zinc-900 hover:bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-orange-500 rounded transition-all"
+                        >
+                          <span className="text-orange-500 font-medium">
+                            + Create Custom Exercise
+                          </span>
+                        </button>
+
+                        {/* Back Button */}
+                        <LabButton
+                          onClick={() => setStep(1)}
+                          className="w-full bg-transparent border border-zinc-700 text-zinc-50 hover:bg-zinc-900"
+                        >
+                          Back
+                        </LabButton>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -314,23 +453,6 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
                             placeholder="12"
                           />
                         </div>
-
-                        {/* Weight */}
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-300 mb-2">
-                            Weight (lbs)
-                          </label>
-                          <input
-                            type="number"
-                            required
-                            min="0"
-                            step="0.5"
-                            value={weight}
-                            onChange={e => setWeight(e.target.value)}
-                            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-50 placeholder-zinc-500 focus:outline-none focus:border-orange-500 transition-colors"
-                            placeholder="135"
-                          />
-                        </div>
                       </>
                     ) : (
                       <>
@@ -371,7 +493,9 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
                         {attempts && made && (
                           <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded">
                             <p className="text-sm text-zinc-400">Success Rate</p>
-                            <p className="text-3xl font-black text-orange-500">{successPercentage}%</p>
+                            <p className="text-3xl font-black text-orange-500">
+                              {successPercentage}%
+                            </p>
                           </div>
                         )}
                       </>
