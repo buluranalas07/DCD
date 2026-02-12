@@ -148,6 +148,7 @@ export const DiaryPage: React.FC = () => {
 
   const handleDeleteFood = async (logId: string) => {
     if (!currentUser) return
+    if (!window.confirm('Delete this food log?')) return
     try {
       await deleteDoc(doc(db, 'users', currentUser.uid, 'foodLogs', logId))
       setFoodLogs(prev => prev.filter(log => log.id !== logId))
@@ -158,6 +159,7 @@ export const DiaryPage: React.FC = () => {
 
   const handleDeleteActivity = async (logId: string) => {
     if (!currentUser) return
+    if (!window.confirm('Delete this activity log?')) return
     try {
       await deleteDoc(doc(db, 'users', currentUser.uid, 'activityLogs', logId))
       setActivityLogs(prev => prev.filter(log => log.id !== logId))
@@ -246,7 +248,7 @@ export const DiaryPage: React.FC = () => {
               <div className="relative" ref={calendarRef}>
                 <button
                   onClick={() => setCalendarOpen(!calendarOpen)}
-                  className="text-xl font-bold text-zinc-50 hover:text-orange-500 transition-colors cursor-pointer min-w-[400px] text-center"
+                  className="text-base md:text-xl font-bold text-zinc-50 hover:text-orange-500 transition-colors cursor-pointer text-center"
                 >
                   {formatDate(selectedDate)}
                 </button>

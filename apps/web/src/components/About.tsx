@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 
 export const About: React.FC = () => {
   return (
-    <section id="about" className="py-20 px-6 bg-zinc-900/30">
+    <section id="about" className="py-20 px-6 pb-40 bg-zinc-900/30">
       <div className="max-w-6xl mx-auto">
         {/* Section Title */}
         <motion.h2

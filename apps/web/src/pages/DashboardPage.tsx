@@ -1,15 +1,66 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { Layout } from '../components/Layout'
 import { LabCard } from '../components/LabCard'
 import { WorkoutModal } from '../components/WorkoutModal'
 import { FoodModal } from '../components/FoodModal'
 
+const getTodayKey = (): string => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+const getYesterdayKey = (): string => {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export const DashboardPage: React.FC = () => {
   const [workoutModalOpen, setWorkoutModalOpen] = useState(false)
   const [foodModalOpen, setFoodModalOpen] = useState(false)
+  const [streak, setStreak] = useState(0)
   const { currentUser } = useAuth()
+
+  // Update streak on dashboard visit
+  useEffect(() => {
+    if (!currentUser) return
+
+    const updateStreak = async () => {
+      const streakRef = doc(db, 'users', currentUser.uid, 'meta', 'streak')
+      const streakDoc = await getDoc(streakRef)
+      const today = getTodayKey()
+      const yesterday = getYesterdayKey()
+
+      if (streakDoc.exists()) {
+        const data = streakDoc.data()
+        const lastActive: string = data.lastActiveDate
+
+        if (lastActive === today) {
+          // Already counted today
+          setStreak(data.count)
+        } else if (lastActive === yesterday) {
+          // Consecutive day — increment
+          const newCount = data.count + 1
+          await setDoc(streakRef, { lastActiveDate: today, count: newCount })
+          setStreak(newCount)
+        } else {
+          // Streak broken — reset to 1
+          await setDoc(streakRef, { lastActiveDate: today, count: 1 })
+          setStreak(1)
+        }
+      } else {
+        // First time — start streak at 1
+        await setDoc(streakRef, { lastActiveDate: today, count: 1 })
+        setStreak(1)
+      }
+    }
+
+    updateStreak()
+  }, [currentUser])
 
   return (
     <Layout>
@@ -35,7 +86,7 @@ export const DashboardPage: React.FC = () => {
               <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z" />
               </svg>
-              <span className="text-sm font-bold text-zinc-50">0</span>
+              <span className="text-sm font-bold text-zinc-50">{streak}</span>
             </div>
           </motion.div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import { updateProfile } from 'firebase/auth'
 import { useAuth } from '../contexts/AuthContext'
 import { Layout } from '../components/Layout'
 import { LabCard } from '../components/LabCard'
@@ -30,9 +31,23 @@ const ATHLETE_QUOTES = [
 
 export const ProfilePage: React.FC = () => {
   const { currentUser } = useAuth()
+  const [displayName, setDisplayName] = useState(currentUser?.displayName || '')
+  const [saving, setSaving] = useState(false)
   const [selectedQuote] = useState(
     ATHLETE_QUOTES[Math.floor(Math.random() * ATHLETE_QUOTES.length)]
   )
+
+  const handleSaveProfile = async () => {
+    if (!currentUser) return
+    setSaving(true)
+    try {
+      await updateProfile(currentUser, { displayName: displayName.trim() })
+    } catch (error) {
+      console.error('Error updating profile:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -171,7 +186,8 @@ export const ProfilePage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    defaultValue={currentUser?.displayName || ''}
+                    value={displayName}
+                    onChange={e => setDisplayName(e.target.value)}
                     className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-50 placeholder-zinc-500 focus:outline-none focus:border-orange-500 transition-colors"
                     placeholder="Enter your name"
                   />
@@ -190,8 +206,12 @@ export const ProfilePage: React.FC = () => {
 
                 {/* Save Button */}
                 <div className="pt-4">
-                  <button className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-black font-semibold rounded transition-colors">
-                    Save Changes
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                    className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-black font-semibold rounded transition-colors disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </div>

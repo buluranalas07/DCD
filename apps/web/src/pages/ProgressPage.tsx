@@ -46,6 +46,7 @@ export const ProgressPage: React.FC = () => {
             exercise: data.exercise,
             sets: data.sets,
             reps: data.reps,
+            weight: data.weight,
             attempts: data.attempts,
             made: data.made,
           }
@@ -265,14 +266,18 @@ export const ProgressPage: React.FC = () => {
 
                         {activity.type === 'workout' && (
                           <p className="text-xs text-zinc-400 mt-1">
-                            {activity.sets} sets × {activity.reps} reps @ {activity.weight} lbs
+                            {activity.sets} sets × {activity.reps} reps
+                            {activity.weight ? ` @ ${activity.weight} lbs` : ''}
                           </p>
                         )}
 
                         {activity.type === 'skill' && (
                           <p className="text-xs text-zinc-400 mt-1">
                             {activity.made}/{activity.attempts} made (
-                            {((activity.made! / activity.attempts!) * 100).toFixed(1)}%)
+                            {activity.attempts
+                              ? ((activity.made! / activity.attempts) * 100).toFixed(1)
+                              : '0.0'}
+                            %)
                           </p>
                         )}
                       </motion.div>

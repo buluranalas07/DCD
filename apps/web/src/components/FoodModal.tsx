@@ -19,9 +19,24 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
   const [unit, setUnit] = useState('g')
   const [saving, setSaving] = useState(false)
 
+  const resetForm = () => {
+    setMealType('')
+    setDescription('')
+    setWeight('')
+    setUnit('g')
+  }
+
+  const handleClose = () => {
+    resetForm()
+    onClose()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentUser) return
+
+    const parsedWeight = parseFloat(weight)
+    if (isNaN(parsedWeight) || parsedWeight <= 0) return
 
     setSaving(true)
     try {
@@ -30,18 +45,13 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
       await addDoc(collection(db, 'users', currentUser.uid, 'foodLogs'), {
         mealType,
         description,
-        weight: parseFloat(weight),
+        weight: parsedWeight,
         unit,
         dateKey,
         createdAt: serverTimestamp(),
       })
 
-      // Reset form
-      setMealType('')
-      setDescription('')
-      setWeight('')
-      setUnit('g')
-      onClose()
+      handleClose()
     } catch (error) {
       console.error('Error saving food log:', error)
     } finally {
@@ -60,7 +70,7 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="fixed inset-0 bg-black/80 z-50"
           />
 
@@ -77,7 +87,7 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-zinc-50">Log Nutrition</h2>
                   <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="text-zinc-400 hover:text-zinc-50 transition-colors"
                   >
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

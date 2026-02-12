@@ -46,17 +46,24 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
   const [attempts, setAttempts] = useState('')
   const [made, setMade] = useState('')
 
-  // Fetch system exercises from Firestore
+  // Fetch system + user exercises from Firestore
   useEffect(() => {
     const fetchExercises = async () => {
+      if (!currentUser) return
       setLoadingExercises(true)
       try {
         const exercisesRef = collection(db, 'exercises')
-        const q = query(exercisesRef, where('ownerId', '==', 'system'))
-        const querySnapshot = await getDocs(q)
+
+        const [systemSnapshot, userSnapshot] = await Promise.all([
+          getDocs(query(exercisesRef, where('ownerId', '==', 'system'))),
+          getDocs(query(exercisesRef, where('ownerId', '==', currentUser.uid))),
+        ])
 
         const fetchedExercises: Exercise[] = []
-        querySnapshot.forEach(doc => {
+        systemSnapshot.forEach(doc => {
+          fetchedExercises.push({ id: doc.id, ...doc.data() } as Exercise)
+        })
+        userSnapshot.forEach(doc => {
           fetchedExercises.push({ id: doc.id, ...doc.data() } as Exercise)
         })
 
@@ -71,7 +78,7 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
     if (isOpen) {
       fetchExercises()
     }
-  }, [isOpen])
+  }, [isOpen, currentUser])
 
   // Filter exercises based on search and type
   const filteredExercises = useMemo(() => {
@@ -163,17 +170,28 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
     const now = new Date()
     const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
+    const exerciseName = exercises.find((ex: Exercise) => ex.id === selectedExercise)?.name
+    if (!exerciseName) return
+
+    const parsedSets = parseInt(sets)
+    const parsedReps = parseInt(reps)
+    const parsedAttempts = parseInt(attempts)
+    const parsedMade = parseInt(made)
+
+    if (workoutType === 'strength' && (isNaN(parsedSets) || isNaN(parsedReps))) return
+    if (workoutType === 'skill' && (isNaN(parsedAttempts) || isNaN(parsedMade))) return
+
     const workoutLog = {
       type: workoutType,
-      exercise: exercises.find((ex: Exercise) => ex.id === selectedExercise)?.name,
+      exercise: exerciseName,
       ...(workoutType === 'strength'
         ? {
-            sets: parseInt(sets),
-            reps: parseInt(reps),
+            sets: parsedSets,
+            reps: parsedReps,
           }
         : {
-            attempts: parseInt(attempts),
-            made: parseInt(made),
+            attempts: parsedAttempts,
+            made: parsedMade,
             percentage: parseFloat(successPercentage),
           }),
       dateKey,
@@ -182,11 +200,10 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
 
     try {
       await addDoc(collection(db, 'users', currentUser.uid, 'activityLogs'), workoutLog)
+      handleClose()
     } catch (error) {
       console.error('Error saving workout log:', error)
     }
-
-    handleClose()
   }
 
   if (!isOpen) return null

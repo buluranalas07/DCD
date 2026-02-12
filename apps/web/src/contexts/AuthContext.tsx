@@ -38,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
     if (userCredential.user) {
       await updateProfile(userCredential.user, { displayName })
+      setCurrentUser({ ...userCredential.user })
     }
   }
 
