@@ -16,7 +16,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   modifiersClassNames,
 }) => {
   return (
-    <div className="calendar-custom flex justify-center items-center w-full">
+    <div className="calendar-custom flex justify-center items-center w-full max-w-full overflow-hidden">
       <DayPicker
         mode="single"
         selected={selected}
