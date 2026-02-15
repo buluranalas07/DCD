@@ -24,6 +24,8 @@ export const Calendar: React.FC<CalendarProps> = ({
         modifiers={modifiers}
         modifiersClassNames={modifiersClassNames}
         numberOfMonths={1}
+        fixedWeeks
+        showOutsideDays
         className="p-4"
         classNames={{
           months: 'flex',

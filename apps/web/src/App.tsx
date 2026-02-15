@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { DiaryPage } from './pages/DiaryPage'
 import { ProgressPage } from './pages/ProgressPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { OnboardingPage } from './pages/OnboardingPage'
 import './style.css'
 
 export function App() {
@@ -20,6 +21,14 @@ export function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/signin" element={<SignInPage />} />
             <Route path="/signup" element={<SignUpPage />} />
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <OnboardingPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={

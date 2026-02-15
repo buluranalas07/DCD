@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { collection, query, where, getDocs, deleteDoc, updateDoc, doc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { Layout } from '../components/Layout'
 import { LabCard } from '../components/LabCard'
+import { MacrosCard } from '../components/MacrosCard'
 import { Calendar } from '../components/Calendar'
+import { formatDateKey, sumEstimatedMacros } from '@repo/shared'
 
 type MealType = 'breakfast' | 'lunch' | 'dinner'
 type ActivityType = 'strength' | 'skill'
@@ -30,22 +32,15 @@ interface ActivityLog {
   percentage?: number
 }
 
-const normalizeDateKey = (date: Date): string => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 export const DiaryPage: React.FC = () => {
-  const { currentUser } = useAuth()
+  const { currentUser, userProfile } = useAuth()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([])
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([])
   const [calendarOpen, setCalendarOpen] = useState(false)
   const calendarRef = useRef<HTMLDivElement>(null)
 
-  const dateKey = normalizeDateKey(selectedDate)
+  const dateKey = formatDateKey(selectedDate)
 
   // Fetch logs for selected date
   const fetchLogs = useCallback(async () => {
@@ -213,6 +208,14 @@ export const DiaryPage: React.FC = () => {
   const foodByMeal = groupFoodByMeal(foodLogs)
   const activityByType = groupActivityByType(activityLogs)
 
+  // Compute macro totals from food logs for MacrosCard
+  const currentMacros = useMemo(() => {
+    const weights: number[] = foodLogs.map(log => log.weight || 0)
+    return sumEstimatedMacros(weights)
+  }, [foodLogs])
+
+  const macrosTarget = userProfile?.macros_target
+
   return (
     <Layout>
       <main className="flex-1 overflow-y-auto">
@@ -305,6 +308,9 @@ export const DiaryPage: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="space-y-8"
             >
+              {/* Daily Macros Summary */}
+              {macrosTarget && <MacrosCard current={currentMacros} target={macrosTarget} />}
+
               {/* Food Section */}
               <section>
                 <div className="mb-4 text-center">
@@ -439,6 +445,7 @@ const FoodCard: React.FC<FoodCardProps> = ({ log, onDelete, onEdit }) => {
             <div className="flex gap-2 items-center">
               <input
                 type="number"
+                min="0"
                 value={wt}
                 onChange={e => setWt(e.target.value)}
                 className="w-20 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-50 focus:outline-none focus:border-orange-500"
@@ -632,6 +639,7 @@ const StrengthCard: React.FC<StrengthCardProps> = ({ log, onDelete, onEdit }) =>
               <span className="text-xs text-zinc-400">Sets:</span>
               <input
                 type="number"
+                min="1"
                 value={sets}
                 onChange={e => setSets(e.target.value)}
                 className="w-14 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-50 focus:outline-none focus:border-orange-500"
@@ -641,6 +649,7 @@ const StrengthCard: React.FC<StrengthCardProps> = ({ log, onDelete, onEdit }) =>
               <span className="text-xs text-zinc-400">Reps:</span>
               <input
                 type="number"
+                min="1"
                 value={reps}
                 onChange={e => setReps(e.target.value)}
                 className="w-14 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-50 focus:outline-none focus:border-orange-500"
@@ -765,6 +774,7 @@ const SkillCard: React.FC<SkillCardProps> = ({ log, onDelete, onEdit }) => {
               <span className="text-xs text-zinc-400">Attempts:</span>
               <input
                 type="number"
+                min="1"
                 value={attempts}
                 onChange={e => setAttempts(e.target.value)}
                 className="w-14 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-50 focus:outline-none focus:border-orange-500"
@@ -774,6 +784,7 @@ const SkillCard: React.FC<SkillCardProps> = ({ log, onDelete, onEdit }) => {
               <span className="text-xs text-zinc-400">Made:</span>
               <input
                 type="number"
+                min="0"
                 value={made}
                 onChange={e => setMade(e.target.value)}
                 className="w-14 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-50 focus:outline-none focus:border-orange-500"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LabButton } from './LabButton'
 
@@ -13,7 +14,7 @@ export const Hero: React.FC = () => {
   // --- Configuration ---
   const line1 = 'TALENT IS CHEAP,'
   const line2End = ' IS COSTLY.'
-  const words = ['DEDICATION', 'DISCIPLINE', 'COMMITMENT']
+  const words = ['DISCIPLINE', 'COMMITMENT', 'DEDICATION']
   const fullText = line1 + ' ' + words[0] + line2End
 
   const images = [
@@ -177,9 +178,11 @@ export const Hero: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.5 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <LabButton className="bg-orange-500 text-black border-none hover:bg-orange-400">
-            Get Started
-          </LabButton>
+          <Link to="/signup">
+            <LabButton className="bg-orange-500 text-black border-none hover:bg-orange-400">
+              Get Started
+            </LabButton>
+          </Link>
           <LabButton className="bg-transparent border border-zinc-700 text-zinc-50 hover:bg-zinc-900">
             Learn More
           </LabButton>

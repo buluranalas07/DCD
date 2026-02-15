@@ -35,7 +35,7 @@ export const SignInPage: React.FC = () => {
       setLoading(true)
       await loginWithGoogle()
       navigate('/dashboard')
-    } catch (err: any) {
+    } catch (err) {
       setError('Failed to sign in with Google. Please try again.')
       console.error(err)
     } finally {

@@ -4,12 +4,14 @@ import { z } from 'zod'
 export const StrengthPayload = z.object({
   exerciseId: z.string(),
   exerciseName: z.string(), // Cached for display speed
-  sets: z.array(
-    z.object({
-      weight: z.number().min(0),
-      reps: z.number().min(0),
-    })
-  ),
+  sets: z
+    .array(
+      z.object({
+        weight: z.number().min(0),
+        reps: z.number().min(0),
+      })
+    )
+    .min(1, 'At least one set is required'),
 })
 
 // 2. Skill Payload (for skill work like basketball shots)
@@ -27,7 +29,7 @@ export const SkillPayload = z
 export const FoodPayload = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner']),
   foodName: z.string(),
-  weight: z.number(), // in grams
+  weight: z.number().min(0), // in grams
 })
 
 // 4. The Main Activity Log Schema (Discriminated Union)

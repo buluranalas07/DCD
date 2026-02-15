@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { Layout } from '../components/Layout'
 import { Calendar } from '../components/Calendar'
 import { LabCard } from '../components/LabCard'
+import { MacroAdherenceChart } from '../components/charts/MacroAdherenceChart'
+import { WorkoutConsistencyChart } from '../components/charts/WorkoutConsistencyChart'
+import { DrillPerformanceChart } from '../components/charts/DrillPerformanceChart'
+
+import { formatDateKey } from '@repo/shared'
 
 type ActivityType = 'workout' | 'skill'
 
@@ -22,9 +27,15 @@ interface ActivityLog {
   made?: number
 }
 
+interface FoodLogEntry {
+  dateKey: string
+  weight: number
+}
+
 export const ProgressPage: React.FC = () => {
-  const { currentUser } = useAuth()
+  const { currentUser, userProfile } = useAuth()
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([])
+  const [foodLogs, setFoodLogs] = useState<FoodLogEntry[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
 
   // Fetch activity logs from Firestore
@@ -60,20 +71,48 @@ export const ProgressPage: React.FC = () => {
     fetchLogs()
   }, [currentUser])
 
-  // Helper: Normalize date to YYYY-MM-DD string
-  const normalizeDate = (date: Date): string => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
+  // Fetch last 7 days of food logs for macro adherence chart
+  useEffect(() => {
+    if (!currentUser) return
+
+    const fetchFoodLogs = async () => {
+      try {
+        const now = new Date()
+        const sevenDaysAgo = new Date(now)
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
+
+        // Use shared utility for date keys to match stored format
+        const startKey = formatDateKey(sevenDaysAgo)
+        const endKey = formatDateKey(now)
+
+        const foodRef = collection(db, 'users', currentUser.uid, 'foodLogs')
+        // Using string comparison for date keys works because format is YYYY-MM-DD
+        const foodQuery = query(
+          foodRef,
+          where('dateKey', '>=', startKey),
+          where('dateKey', '<=', endKey)
+        )
+        const snapshot = await getDocs(foodQuery)
+
+        const logs: FoodLogEntry[] = snapshot.docs.map(d => {
+          const data = d.data()
+          return { dateKey: data.dateKey, weight: data.weight || 0 }
+        })
+        setFoodLogs(logs)
+      } catch (error) {
+        console.error('Error fetching food logs:', error)
+      }
+    }
+
+    fetchFoodLogs()
+  }, [currentUser])
 
   // Step A: Create lookup map with O(1) performance
   const activityMap = useMemo(() => {
     const map: Record<string, Set<ActivityType>> = {}
 
     activityLogs.forEach(log => {
-      const dateKey = normalizeDate(log.date)
+      const dateKey = formatDateKey(log.date)
       if (!map[dateKey]) {
         map[dateKey] = new Set()
       }
@@ -105,10 +144,64 @@ export const ProgressPage: React.FC = () => {
     return { both, workoutOnly, skillOnly }
   }, [activityMap])
 
+  // Macro adherence chart data (last 7 days)
+  const macroChartData = useMemo(() => {
+    const now = new Date()
+    const days: { day: string; calories: number }[] = []
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' })
+      const cals = foodLogs.filter(f => f.dateKey === key).reduce((sum, f) => sum + f.weight, 0)
+      days.push({ day: dayLabel, calories: cals })
+    }
+
+    return days
+  }, [foodLogs])
+
+  // Workout consistency chart data (workouts per week, last 8 weeks)
+  const workoutConsistencyData = useMemo(() => {
+    const now = new Date()
+    const weeks: { week: string; workouts: number }[] = []
+
+    for (let w = 7; w >= 0; w--) {
+      const weekStart = new Date(now)
+      weekStart.setDate(weekStart.getDate() - w * 7)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekEnd.getDate() + 6)
+
+      const count = activityLogs.filter(log => {
+        return log.type === 'workout' && log.date >= weekStart && log.date <= weekEnd
+      }).length
+
+      const label = `${String(weekStart.getMonth() + 1).padStart(2, '0')}/${String(weekStart.getDate()).padStart(2, '0')}`
+      weeks.push({ week: label, workouts: count })
+    }
+
+    return weeks
+  }, [activityLogs])
+
+  // Drill performance chart data (all activity logs with date + exercise info)
+  const drillLogs = useMemo(() => {
+    return activityLogs.map(log => ({
+      date: formatDateKey(log.date),
+      exercise: log.exercise || 'Unknown',
+      sets: log.sets,
+      reps: log.reps,
+      weight: log.weight,
+      attempts: log.attempts,
+      made: log.made,
+    }))
+  }, [activityLogs])
+
+  const targetCalories = userProfile?.macros_target?.daily_calories || 2000
+
   // Step C: Get activities for a specific date
   const getActivitiesForDate = (date: Date): ActivityLog[] => {
-    const dateKey = normalizeDate(date)
-    return activityLogs.filter(log => normalizeDate(log.date) === dateKey)
+    const dateKey = formatDateKey(date)
+    return activityLogs.filter(log => formatDateKey(log.date) === dateKey)
   }
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -183,32 +276,35 @@ export const ProgressPage: React.FC = () => {
                 {/* Legend */}
                 <div className="mt-6 space-y-2">
                   <h3 className="text-sm font-semibold text-zinc-300 mb-2">Legend</h3>
+
                   <motion.div
                     className="flex items-center gap-2"
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.15 }}
                   >
-                    <div className="w-4 h-4 rounded bg-orange-500"></div>
-                    <span className="text-sm text-zinc-400">Workout & Skill</span>
+                    <div className="w-4 h-4 rounded bg-blue-500"></div>
+                    <span className="text-sm text-zinc-400">Workout</span>
                   </motion.div>
+
                   <motion.div
                     className="flex items-center gap-2"
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 }}
                   >
-                    <div className="w-4 h-4 rounded bg-blue-500"></div>
-                    <span className="text-sm text-zinc-400">Workout Only</span>
+                    <div className="w-4 h-4 rounded bg-purple-500"></div>
+                    <span className="text-sm text-zinc-400">Skill</span>
                   </motion.div>
+
                   <motion.div
                     className="flex items-center gap-2"
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.25 }}
                   >
-                    <div className="w-4 h-4 rounded bg-purple-500"></div>
-                    <span className="text-sm text-zinc-400">Skill Only</span>
+                    <div className="w-4 h-4 rounded bg-orange-500"></div>
+                    <span className="text-sm text-zinc-400">Workout & Skill</span>
                   </motion.div>
                 </div>
               </LabCard>
@@ -338,6 +434,23 @@ export const ProgressPage: React.FC = () => {
               </LabCard>
             </motion.div>
           </div>
+
+          {/* Charts Section */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.3 }}
+            className="space-y-6"
+          >
+            <h2 className="text-xl font-bold text-zinc-50">Analytics</h2>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <MacroAdherenceChart data={macroChartData} targetCalories={targetCalories} />
+              <WorkoutConsistencyChart data={workoutConsistencyData} />
+            </div>
+
+            <DrillPerformanceChart logs={drillLogs} />
+          </motion.section>
         </div>
       </main>
     </Layout>

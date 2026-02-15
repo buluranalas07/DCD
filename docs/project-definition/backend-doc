@@ -1,9 +1,3 @@
-Here is the revised, production-grade **Backend Technical Specification**.
-
-It is aligned strictly with your **PDD**, fixes the database structure, includes the missing Food logic, and enforces the "Hybrid" architecture (Writes via API, Reads via SDK) for maximum performance.
-
----
-
 # ⚙️ FILE 2: BACKEND TECHNICAL SPECIFICATIONS
 
 **Scope:** `apps/functions`, `packages/shared`, `Firebase`
@@ -16,10 +10,10 @@ It is aligned strictly with your **PDD**, fixes the database structure, includes
 
 We utilize the "Hybrid" approach to balance data integrity with user experience.
 
-| Action | Path | Reason |
-| --- | --- | --- |
+| Action                 | Path                          | Reason                                                                               |
+| ---------------------- | ----------------------------- | ------------------------------------------------------------------------------------ |
 | **Writes (Mutations)** | **Client → tRPC → Firestore** | Enforces Zod validation and business logic on the server before data touches the DB. |
-| **Reads (Queries)** | **Client → Firestore SDK** | Enables `onSnapshot` (Real-time), offline caching, and zero-latency UI updates. |
+| **Reads (Queries)**    | **Client → Firestore SDK**    | Enables `onSnapshot` (Real-time), offline caching, and zero-latency UI updates.      |
 
 ---
 
@@ -31,39 +25,33 @@ We use a **Root-Level Shared Library** and **Sub-Collection User Data** to maxim
 
 **1. The Global Library**
 
-* **Path:** `exercises/{exerciseId}`
-* **Purpose:** Stores both "System" (default) and "User" (custom) exercises.
-* **Fields:**
-* `id`: string (UUID)
-* `ownerId`: string (`'system'` OR `uid`)
-* `name`: string ("Bench Press")
-* `category`: string ("STRENGTH" | "SKILL")
-* `muscleGroup`: string ("CHEST", "LEGS", etc.)
-
-
+- **Path:** `exercises/{exerciseId}`
+- **Purpose:** Stores both "System" (default) and "User" (custom) exercises.
+- **Fields:**
+- `id`: string (UUID)
+- `ownerId`: string (`'system'` OR `uid`)
+- `name`: string ("Bench Press")
+- `category`: string ("STRENGTH" | "SKILL")
+- `muscleGroup`: string ("CHEST", "LEGS", etc.)
 
 **2. The User Profile**
 
-* **Path:** `users/{uid}`
-* **Purpose:** User settings and aggregate stats.
-* **Fields:**
-* `displayName`: string
-* `primarySport`: string
-* `createdAt`: timestamp
-
-
+- **Path:** `users/{uid}`
+- **Purpose:** User settings and aggregate stats.
+- **Fields:**
+- `displayName`: string
+- `primarySport`: string
+- `createdAt`: timestamp
 
 **3. The Activity Log (The Ledger)**
 
-* **Path:** `users/{uid}/logs/{logId}`
-* **Purpose:** The single source of truth for daily activity.
-* **Fields:**
-* `date`: string ("YYYY-MM-DD") — *Primary Query Index*
-* `type`: string ("STRENGTH" | "SKILL" | "FOOD")
-* `payload`: map (Dynamic object based on `type`)
-* `createdAt`: serverTimestamp()
-
-
+- **Path:** `users/{uid}/logs/{logId}`
+- **Purpose:** The single source of truth for daily activity.
+- **Fields:**
+- `date`: string ("YYYY-MM-DD") — _Primary Query Index_
+- `type`: string ("STRENGTH" | "SKILL" | "FOOD")
+- `payload`: map (Dynamic object based on `type`)
+- `createdAt`: serverTimestamp()
 
 ---
 
@@ -74,10 +62,9 @@ All validation logic lives here. Both the Frontend (Forms) and Backend (API) imp
 ### 3.1 Enums & Constants
 
 ```typescript
-export const ActivityTypeEnum = z.enum(["STRENGTH", "SKILL", "FOOD"]);
-export const MuscleGroupEnum = z.enum(["CHEST", "BACK", "LEGS", "CORE", "CARDIO", "FULL_BODY"]);
-export const MealTypeEnum = z.enum(["BREAKFAST", "LUNCH", "DINNER", "SNACK"]);
-
+export const ActivityTypeEnum = z.enum(['STRENGTH', 'SKILL', 'FOOD'])
+export const MuscleGroupEnum = z.enum(['CHEST', 'BACK', 'LEGS', 'CORE', 'CARDIO', 'FULL_BODY'])
+export const MealTypeEnum = z.enum(['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'])
 ```
 
 ### 3.2 The Master Log Schema
@@ -89,36 +76,39 @@ We use a **Discriminated Union** to ensure type safety across different log type
 const StrengthPayload = z.object({
   exerciseId: z.string(),
   exerciseName: z.string(), // Cached for UI speed
-  sets: z.array(z.object({
-    weight: z.number().min(0),
-    reps: z.number().min(0)
-  })),
-});
+  sets: z.array(
+    z.object({
+      weight: z.number().min(0),
+      reps: z.number().min(0),
+    })
+  ),
+})
 
-const SkillPayload = z.object({
-  drillName: z.string(),
-  attempts: z.number().min(1),
-  made: z.number().min(0),
-}).refine((d) => d.made <= d.attempts, { message: "Made cannot exceed Attempts" });
+const SkillPayload = z
+  .object({
+    drillName: z.string(),
+    attempts: z.number().min(1),
+    made: z.number().min(0),
+  })
+  .refine(d => d.made <= d.attempts, { message: 'Made cannot exceed Attempts' })
 
 const FoodPayload = z.object({
   mealType: MealTypeEnum,
   foodName: z.string().min(1),
   weight: z.number().min(1), // grams
   calories: z.number().optional(), // Future proofing
-});
+})
 
 // 2. The API Schema
 export const CreateLogSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   type: ActivityTypeEnum,
-  payload: z.discriminatedUnion("type", [
-    z.object({ type: z.literal("STRENGTH"), ...StrengthPayload.shape }),
-    z.object({ type: z.literal("SKILL"), ...SkillPayload.shape }),
-    z.object({ type: z.literal("FOOD"), ...FoodPayload.shape }),
+  payload: z.discriminatedUnion('type', [
+    z.object({ type: z.literal('STRENGTH'), ...StrengthPayload.shape }),
+    z.object({ type: z.literal('SKILL'), ...SkillPayload.shape }),
+    z.object({ type: z.literal('FOOD'), ...FoodPayload.shape }),
   ]),
-});
-
+})
 ```
 
 ---
@@ -129,38 +119,33 @@ export const CreateLogSchema = z.object({
 
 ### 4.1 Authentication Context (`context.ts`)
 
-* Extract `Authorization` header (Bearer Token).
-* Verify via `admin.auth().verifyIdToken(token)`.
-* Reject request if invalid.
-* Inject `ctx.uid` into all procedures.
+- Extract `Authorization` header (Bearer Token).
+- Verify via `admin.auth().verifyIdToken(token)`.
+- Reject request if invalid.
+- Inject `ctx.uid` into all procedures.
 
 ### 4.2 Router: `exercise`
 
-* **`create` (Mutation):**
-* **Input:** `ExerciseSchema`
-* **Logic:** Force `ownerId` to be `ctx.uid`. Create document in `exercises/`.
-* **Return:** `{ id: string, success: true }`
-
-
+- **`create` (Mutation):**
+- **Input:** `ExerciseSchema`
+- **Logic:** Force `ownerId` to be `ctx.uid`. Create document in `exercises/`.
+- **Return:** `{ id: string, success: true }`
 
 ### 4.3 Router: `log`
 
-* **`create` (Mutation):**
-* **Input:** `CreateLogSchema`
-* **Logic:**
+- **`create` (Mutation):**
+- **Input:** `CreateLogSchema`
+- **Logic:**
+
 1. Validate Schema (Zod).
 2. Add `createdAt: admin.firestore.FieldValue.serverTimestamp()`.
 3. Write to `users/{ctx.uid}/logs`.
 
+- **Return:** `{ id: string, success: true }`
 
-* **Return:** `{ id: string, success: true }`
-
-
-* **`delete` (Mutation):**
-* **Input:** `{ id: string }`
-* **Logic:** Delete document at `users/{ctx.uid}/logs/{id}`.
-
-
+- **`delete` (Mutation):**
+- **Input:** `{ id: string }`
+- **Logic:** Delete document at `users/{ctx.uid}/logs/{id}`.
 
 ---
 
@@ -190,7 +175,7 @@ service cloud.firestore {
       allow read: if request.auth != null && (
         resource.data.ownerId == 'system' || resource.data.ownerId == request.auth.uid
       );
-      
+
       // WRITE: Only if user is creating it for themselves (Admin SDK bypasses this for System)
       allow write: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
     }
@@ -209,9 +194,3 @@ service cloud.firestore {
 4. **Backend:** Implement `exercise.create` and `log.create` using the Zod schemas.
 
 ---
-
-### Key Changes from previous versions:
-
-1. **Unified Exercise Library:** Moved to Root collection to allow "System" exercises to be shared globally.
-2. **Added Food:** Explicitly defined `FoodPayload` in the schema.
-3. **Removed Read Routers:** `getByDate` and `getMonthStatus` were removed from tRPC to enforce Client-Side reads (performance).

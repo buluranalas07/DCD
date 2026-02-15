@@ -11,6 +11,7 @@ export const NavBar: React.FC = () => {
         {/* Logo Section */}
         <Link
           to="/"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="text-zinc-50 text-xl font-bold hover:text-orange-500 transition-colors"
         >
           DCD Lab

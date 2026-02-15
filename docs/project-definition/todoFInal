@@ -1,0 +1,97 @@
+# todoFinal: Full Stack Fitness Refactor (Updated)
+
+### Phase 1: Data Modeling & Schema (The Foundation)
+
+_Refactor your database schemas to support the new features._
+
+- [ ] **Update User Schema**: Add a `profile` object to store onboarding data.
+- `sex`, `dob`/`age`, `height_cm`, `weight_kg`.
+- `activity_level`, `goal`.
+- `macros_target` object (daily calories, protein, carbs, fat).
+
+- [ ] **Create "Muscle State" Schema**: Add a `muscle_recovery` object to the **User** document.
+- Structure: `{ "chest": timestamp, "quads": timestamp, "back": timestamp, ... }`
+
+- [ ] **Create Static Manifests**:
+- `exercises.json`: Map exercise names to muscle groups.
+- `recipes.json`: Simple array of meal objects with macro tags.
+- `programs.json`: Workout routines keyed by experience level.
+
+### Phase 2: Onboarding Logic (The "Brain")
+
+_Implement the math to generate user targets._
+
+- [ ] **Implement Calculators**:
+- `calculateBMR` (Mifflin-St Jeor).
+- `calculateTDEE` (BMR \* Activity Multiplier).
+- `calculateMacros` (Split TDEE based on Goal).
+
+- [ ] **Build Onboarding Wizard**:
+- Collect User Inputs -> Run Calculators -> Save `macros_target` and `program_id` to User DB.
+
+### Phase 3: The Heatmap Engine (Backend Logic)
+
+- [ ] **Refactor "Log Workout" Action**:
+- On log submit: Lookup exercise in `exercises.json`.
+- Trigger: Update `user.muscle_recovery.[muscle]` with `new Date()`.
+
+- [ ] **Create Heatmap Utility**:
+- Logic: Compare `now` vs `last_workout_timestamp` for each muscle.
+- Return: Color Map (`red` < 24h, `yellow` < 48h, `green` > 48h).
+
+### Phase 4: UI Components (The Building Blocks)
+
+_Create these reusable components first._
+
+- [ ] **Component: `MacrosCard**`:
+- Input: `current_intake` (from today's logs) vs `user.macros_target`.
+- Visual: Progress bars for Protein, Carbs, Fat, Calories.
+
+- [ ] **Component: `BodyHeatmap**`:
+- Input: Color Map from Phase 3.
+- Visual: SVG Body where paths accept fill colors.
+
+- [ ] **Component: `ChartWidget**`:
+- Library: Install `recharts` or `chart.js`.
+- Setup: Generic line/bar chart wrapper.
+
+### Phase 5: Page Implementation (The Assembly)
+
+_Assemble the components into your routes._
+
+**A. Dashboard Page (`/dashboard`)**
+
+- [ ] **Grid Layout**: Create a responsive grid layout.
+- [ ] **Embed `MacrosCard**`: Fetch today's food logs, sum them, pass to component.
+- [ ] **Embed `BodyHeatmap**`: Fetch user's `muscle_recovery` state, run utility, pass colors to SVG.
+- [ ] **Widget: "Today's Plan"**:
+- Display the Workout from the assigned Program (e.g., "Push Day").
+- Display 3 Recipe suggestions (filtered by user goal).
+
+**B. Diary Page (`/diary`)**
+
+- [ ] **Re-use `MacrosCard**`: Place at the top of the daily view.
+- [ ] **Log View**: Ensure the card updates in real-time as users add food/workouts.
+
+**C. Progress Page (`/progress`)**
+
+- [ ] **Chart 1: Macro Adherence (Last 7 Days)**
+- X-Axis: Days of Week.
+- Y-Axis: Calories Consumed vs Target Line.
+- _Data Source:_ Query last 7 daily food log summaries.
+
+- [ ] **Chart 2: Workout Consistency**
+- Visual: Heatmap calendar (GitHub style) or Bar chart (Workouts per week).
+- _Data Source:_ Count logs where `type === 'workout'`.
+
+- [ ] **Chart 3: Drill Performance**
+- UI: Dropdown to select an exercise (e.g., "Squat").
+- X-Axis: Date.
+- Y-Axis: Max Weight or Total Volume (Sets _ Reps _ Weight).
+- _Data Source:_ Query logs filtered by `exercise_name`.
+
+### Phase 6: Final Polish
+
+- [ ] **Empty States**: What do charts look like with no data? (Show "Log your first workout!").
+- [ ] **Mobile Responsiveness**: Ensure the Body Heatmap scales down for phones.
+- [ ] **Testing**: Verify that logging a workout updates the Heatmap and the Consistency Chart simultaneously.

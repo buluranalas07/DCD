@@ -31,7 +31,7 @@ export const SignUpPage: React.FC = () => {
       setLoading(true)
       await signup(email, password, displayName)
       navigate('/dashboard')
-    } catch (err: any) {
+    } catch (err) {
       console.error('Firebase error:', err)
       console.error('Error code:', err.code)
       console.error('Error message:', err.message)
@@ -43,7 +43,9 @@ export const SignUpPage: React.FC = () => {
       } else if (err.code === 'auth/weak-password') {
         setError('Password is too weak')
       } else if (err.code === 'auth/operation-not-allowed') {
-        setError('Email/Password authentication is not enabled. Please enable it in Firebase Console.')
+        setError(
+          'Email/Password authentication is not enabled. Please enable it in Firebase Console.'
+        )
       } else {
         setError(`Failed to create an account: ${err.message}`)
       }
@@ -59,7 +61,7 @@ export const SignUpPage: React.FC = () => {
       setLoading(true)
       await loginWithGoogle()
       navigate('/dashboard')
-    } catch (err: any) {
+    } catch (err) {
       setError('Failed to sign in with Google. Please try again.')
       console.error(err)
     } finally {

@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, addDoc, doc, setDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../contexts/AuthContext'
+import { getMusclesForExercise } from '@repo/shared'
 import { LabButton } from './LabButton'
 import { LabCard } from './LabCard'
 
@@ -45,6 +46,9 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
   // Skill fields
   const [attempts, setAttempts] = useState('')
   const [made, setMade] = useState('')
+
+  // Error state
+  const [error, setError] = useState('')
 
   // Fetch system + user exercises from Firestore
   useEffect(() => {
@@ -146,6 +150,7 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
     setReps('')
     setAttempts('')
     setMade('')
+    setError('')
   }
 
   const handleClose = () => {
@@ -165,21 +170,31 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     if (!currentUser) return
 
     const now = new Date()
     const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
     const exerciseName = exercises.find((ex: Exercise) => ex.id === selectedExercise)?.name
-    if (!exerciseName) return
+    if (!exerciseName) {
+      setError('No exercise selected.')
+      return
+    }
 
     const parsedSets = parseInt(sets)
     const parsedReps = parseInt(reps)
     const parsedAttempts = parseInt(attempts)
     const parsedMade = parseInt(made)
 
-    if (workoutType === 'strength' && (isNaN(parsedSets) || isNaN(parsedReps))) return
-    if (workoutType === 'skill' && (isNaN(parsedAttempts) || isNaN(parsedMade))) return
+    if (workoutType === 'strength' && (isNaN(parsedSets) || isNaN(parsedReps))) {
+      setError('Please enter valid sets and reps.')
+      return
+    }
+    if (workoutType === 'skill' && (isNaN(parsedAttempts) || isNaN(parsedMade))) {
+      setError('Please enter valid attempts and made.')
+      return
+    }
 
     const workoutLog = {
       type: workoutType,
@@ -200,9 +215,24 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
 
     try {
       await addDoc(collection(db, 'users', currentUser.uid, 'activityLogs'), workoutLog)
+
+      // Update muscle recovery timestamps
+      const muscles = getMusclesForExercise(exerciseName)
+      if (muscles.length > 0) {
+        const now = new Date().toISOString()
+        const recoveryUpdate: Record<string, string> = {}
+        muscles.forEach(m => {
+          recoveryUpdate[m] = now
+        })
+        await setDoc(doc(db, 'users', currentUser.uid, 'meta', 'muscleRecovery'), recoveryUpdate, {
+          merge: true,
+        })
+      }
+
       handleClose()
-    } catch (error) {
-      console.error('Error saving workout log:', error)
+    } catch (err) {
+      console.error('Error saving workout log:', err)
+      setError('Failed to save workout. Please try again.')
     }
   }
 
@@ -516,6 +546,13 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({ isOpen, onClose }) =
                           </div>
                         )}
                       </>
+                    )}
+
+                    {/* Error */}
+                    {error && (
+                      <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-sm text-red-400">
+                        {error}
+                      </div>
                     )}
 
                     {/* Buttons */}

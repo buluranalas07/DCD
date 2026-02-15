@@ -18,12 +18,14 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
   const [weight, setWeight] = useState('')
   const [unit, setUnit] = useState('g')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const resetForm = () => {
     setMealType('')
     setDescription('')
     setWeight('')
     setUnit('g')
+    setError('')
   }
 
   const handleClose = () => {
@@ -33,10 +35,14 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     if (!currentUser) return
 
     const parsedWeight = parseFloat(weight)
-    if (isNaN(parsedWeight) || parsedWeight <= 0) return
+    if (isNaN(parsedWeight) || parsedWeight <= 0) {
+      setError('Please enter a valid weight greater than 0.')
+      return
+    }
 
     setSaving(true)
     try {
@@ -52,8 +58,9 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
       })
 
       handleClose()
-    } catch (error) {
-      console.error('Error saving food log:', error)
+    } catch (err) {
+      console.error('Error saving food log:', err)
+      setError('Failed to save food log. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -101,10 +108,17 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
                   </button>
                 </div>
 
+                {/* Error */}
+                {error && (
+                  <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded text-sm text-red-400">
+                    {error}
+                  </div>
+                )}
+
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Meal Type */}
-                  <div>
+                  <div className="mb-4">
                     <label
                       htmlFor="mealType"
                       className="block text-sm font-medium text-zinc-300 mb-2"
@@ -125,6 +139,9 @@ export const FoodModal: React.FC<FoodModalProps> = ({ isOpen, onClose }) => {
                       <option value="lunch">Lunch</option>
                       <option value="dinner">Dinner</option>
                     </select>
+                    {error && !mealType && (
+                      <p className="text-red-500 text-xs mt-1">Please select a meal type.</p>
+                    )}
                   </div>
 
                   {/* Description */}

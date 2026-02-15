@@ -42,7 +42,7 @@ export const Features: React.FC = () => {
                 <li>• Breakfast</li>
                 <li>• Lunch</li>
                 <li>• Dinner</li>
-                <li>• Name + Weight</li>
+                <li>• Description + Weight</li>
               </ul>
             </LabCard>
           </motion.div>
@@ -62,6 +62,7 @@ export const Features: React.FC = () => {
               <h3 className="text-xl font-bold mb-4 text-primary">EXERCISES</h3>
               <ul className="text-zinc-400 space-y-2">
                 <li>• Strength Training</li>
+                <li>• Skill Training</li>
                 <li>• Custom Exercises</li>
                 <li>• Reusable Logs</li>
                 <li>• Quick Selection</li>
@@ -85,8 +86,7 @@ export const Features: React.FC = () => {
               <ul className="text-zinc-400 space-y-2">
                 <li>• Shots Attempted</li>
                 <li>• Shots Made</li>
-                <li>• Misses + %</li>
-                <li>• Skill Tracking</li>
+                <li>• Percentage</li>
               </ul>
             </LabCard>
           </motion.div>
@@ -130,9 +130,8 @@ export const Features: React.FC = () => {
               <h3 className="text-xl font-bold mb-4 text-primary">PROGRESS</h3>
               <ul className="text-zinc-400 space-y-2">
                 <li>• Monthly Calendar</li>
-                <li>• Strength = Red</li>
-                <li>• Drills = Blue</li>
-                <li>• Both = Orange</li>
+                <li>• Track Workout</li>
+                <li>• Track Skills</li>
               </ul>
             </LabCard>
           </motion.div>

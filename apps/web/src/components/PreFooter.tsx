@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LabButton } from './LabButton'
 
@@ -51,9 +52,11 @@ export const PreFooter: React.FC = () => {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
         >
-          <LabButton className="bg-orange-500 text-black border-none hover:bg-orange-400 text-lg px-10 py-4 font-bold uppercase tracking-wider">
-            Start your journey
-          </LabButton>
+          <Link to="/signup">
+            <LabButton className="bg-orange-500 text-black border-none hover:bg-orange-400 text-lg px-10 py-4 font-bold uppercase tracking-wider">
+              Start your journey
+            </LabButton>
+          </Link>
         </motion.div>
       </div>
 
