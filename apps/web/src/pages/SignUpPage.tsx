@@ -32,24 +32,25 @@ export const SignUpPage: React.FC = () => {
       await signup(email, password, displayName)
       navigate('/dashboard')
     } catch (err) {
-      console.error('Firebase error:', err)
-      console.error('Error code:', err.code)
-      console.error('Error message:', err.message)
+      const error = err as any
+      console.error('Firebase error:', error)
+      console.error('Error code:', error.code)
+      console.error('Error message:', error.message)
 
-      if (err.code === 'auth/email-already-in-use') {
+      if (error.code === 'auth/email-already-in-use') {
         setError('Email already in use')
-      } else if (err.code === 'auth/invalid-email') {
+      } else if (error.code === 'auth/invalid-email') {
         setError('Invalid email address')
-      } else if (err.code === 'auth/weak-password') {
+      } else if (error.code === 'auth/weak-password') {
         setError('Password is too weak')
-      } else if (err.code === 'auth/operation-not-allowed') {
+      } else if (error.code === 'auth/operation-not-allowed') {
         setError(
           'Email/Password authentication is not enabled. Please enable it in Firebase Console.'
         )
       } else {
-        setError(`Failed to create an account: ${err.message}`)
+        setError(`Failed to create an account: ${error.message}`)
       }
-      console.error(err)
+      console.error(error)
     } finally {
       setLoading(false)
     }
@@ -62,8 +63,9 @@ export const SignUpPage: React.FC = () => {
       await loginWithGoogle()
       navigate('/dashboard')
     } catch (err) {
+      const error = err as any
       setError('Failed to sign in with Google. Please try again.')
-      console.error(err)
+      console.error(error)
     } finally {
       setLoading(false)
     }

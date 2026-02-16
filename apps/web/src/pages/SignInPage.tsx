@@ -22,8 +22,9 @@ export const SignInPage: React.FC = () => {
       await login(email, password)
       navigate('/dashboard')
     } catch (err) {
+      const error = err as any
       setError('Failed to sign in. Please check your credentials.')
-      console.error(err)
+      console.error(error)
     } finally {
       setLoading(false)
     }
@@ -36,8 +37,9 @@ export const SignInPage: React.FC = () => {
       await loginWithGoogle()
       navigate('/dashboard')
     } catch (err) {
+      const error = err as any
       setError('Failed to sign in with Google. Please try again.')
-      console.error(err)
+      console.error(error)
     } finally {
       setLoading(false)
     }
