@@ -264,7 +264,7 @@ export const DiaryPage: React.FC = () => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[calc(100vw-2rem)]"
+                      className="absolute top-full mt-2 left-0 right-0 mx-auto z-50 w-fit max-w-[calc(100vw-1rem)]"
                     >
                       <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl overflow-hidden">
                         <Calendar selected={selectedDate} onSelect={handleDateSelect} />
