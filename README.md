@@ -1,261 +1,407 @@
-# The Hytel Way: Monorepo Stack
+# DCD Fitness -- Hybrid Performance System
 
-A production-ready monorepo template featuring React, TypeScript, Tailwind CSS, Shadcn UI, tRPC, and TanStack Query. Built with pnpm and Turborepo for optimal developer experience.
+A training and nutrition tracking web application built for the hybrid athlete. DCD (Discipline, Commitment, Dedication) provides a high-utility, zero-friction platform to log workouts, track nutrition, monitor progress, and visualize training consistency -- all through a clean, modern interface.
 
-## Stack Overview
+> **Boilerplate Disclosure:** This project was bootstrapped using the [Hytel](https://github.com/user/hytel) monorepo boilerplate, which provides the foundational monorepo structure, CI/CD pipelines, shared configuration packages, and development tooling. Application-specific features, pages, components, and business logic were built on top of that foundation.
 
-Think of building a web app like putting on a theater production!
+---
 
-| Tool               | Role            | Analogy                                        |
-| ------------------ | --------------- | ---------------------------------------------- |
-| **pnpm**           | Package Manager | The super-organized prop master                |
-| **Turborepo**      | Build System    | The stage manager coordinating tasks           |
-| **React + Vite**   | Frontend        | The stage and lighting system                  |
-| **TypeScript**     | Type Safety     | The script ensuring everyone knows their lines |
-| **Tailwind CSS**   | Styling         | The costume designer's fabric swatches         |
-| **Shadcn UI**      | Components      | Pre-made costume patterns                      |
-| **tRPC**           | API Layer       | The messenger between actors                   |
-| **TanStack Query** | Data Fetching   | Smart caching (remembers the script!)          |
-| **Vitest**         | Testing         | Dress rehearsals before the show               |
-| **Zod**            | Validation      | The bouncer checking IDs                       |
+## Table of Contents
 
-## Monorepo Structure
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Available Scripts](#available-scripts)
+- [Features](#features)
+- [Architecture](#architecture)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Environment Variables](#environment-variables)
+- [Testing](#testing)
+- [Contributing](#contributing)
+
+---
+
+## Tech Stack
+
+| Layer            | Technology                          |
+| ---------------- | ----------------------------------- |
+| Frontend         | React 18, Vite, TypeScript          |
+| Styling          | Tailwind CSS                        |
+| UI Components    | Shadcn UI, Custom Lab components    |
+| Animations       | Framer Motion                       |
+| Charts           | Recharts                            |
+| Routing          | React Router v7                     |
+| API Layer        | tRPC (end-to-end type safety)       |
+| Data Fetching    | TanStack Query                      |
+| Validation       | Zod                                 |
+| Authentication   | Firebase Auth                       |
+| Database         | Cloud Firestore                     |
+| Backend          | Firebase Admin SDK, tRPC Server     |
+| Build System     | Turborepo                           |
+| Package Manager  | pnpm (workspaces)                   |
+| Testing          | Vitest, Testing Library             |
+| Linting          | ESLint, Prettier                    |
+| Versioning       | Changesets                          |
+| CI/CD            | GitHub Actions, Workload Identity Federation |
+
+---
+
+## Project Structure
 
 ```
-├── .github/
-│   ├── workflows/        # CI/CD pipelines (ready to use!)
-│   ├── CODEOWNERS        # Auto-assign reviewers
-│   └── ISSUE_TEMPLATE/   # Issue & PR templates
-│
-├── apps/
-│   ├── web/              # React frontend (Vite + Tailwind)
-│   │   ├── src/
-│   │   │   ├── App.tsx   # Main application component
-│   │   │   ├── hooks/    # Custom React hooks
-│   │   │   ├── lib/      # Utilities (tRPC client, query client)
-│   │   │   └── providers/# Context providers
-│   │   └── public/       # Static assets
-│   │
-│   └── functions/        # tRPC backend
-│       └── src/trpc/     # API routers and procedures
-│
-├── packages/
-│   ├── ui/               # Shared React components
-│   │   ├── components/
-│   │   │   ├── Header.tsx
-│   │   │   ├── Counter.tsx
-│   │   │   └── ui/       # Shadcn UI components (Button, Card)
-│   │   └── lib/utils.ts  # Tailwind class merging utility
-│   │
-│   ├── shared/           # Shared Zod schemas & types
-│   │   └── src/schemas/  # User schemas, validation rules
-│   │
-│   ├── eslint-config/    # Shared ESLint configuration
-│   └── typescript-config/# Shared TypeScript configuration
-│
-├── docs/ci-cd/           # CI/CD documentation
-├── scripts/              # Setup scripts (WIF, etc.)
-├── turbo.json            # Turborepo pipeline configuration
-├── pnpm-workspace.yaml   # Workspace definition
-└── package.json          # Root scripts
+DCD/
+|-- .changeset/                         # Changeset config for versioning
+|-- .github/
+|   |-- ISSUE_TEMPLATE/
+|   |   |-- bug_report.md
+|   |   +-- feature_request.md
+|   |-- workflows/
+|   |   |-- ci.yml                      # Lint, typecheck, build, test
+|   |   |-- deploy-dev.yml              # Auto-deploy on push to dev
+|   |   |-- deploy-stage.yml            # Auto-deploy on push to stage
+|   |   |-- deploy-main.yml             # Manual production deploy
+|   |   |-- release.yml                 # Automated versioning
+|   |   +-- dependency-review.yml       # Vulnerability scanning on PRs
+|   |-- CODEOWNERS
+|   |-- PULL_REQUEST_TEMPLATE.md
+|   +-- SECURITY.md
+|-- .husky/
+|   +-- pre-commit                      # Lint-staged hook
+|-- apps/
+|   |-- web/                            # React frontend (Vite)
+|   |   |-- public/
+|   |   |-- src/
+|   |   |   |-- components/
+|   |   |   |   |-- charts/
+|   |   |   |   |   |-- DrillPerformanceChart.tsx
+|   |   |   |   |   |-- MacroAdherenceChart.tsx
+|   |   |   |   |   +-- WorkoutConsistencyChart.tsx
+|   |   |   |   |-- About.tsx
+|   |   |   |   |-- BodyHeatmap.tsx
+|   |   |   |   |-- Calendar.tsx
+|   |   |   |   |-- Features.tsx
+|   |   |   |   |-- FoodModal.tsx
+|   |   |   |   |-- Footer.tsx
+|   |   |   |   |-- Hero.tsx
+|   |   |   |   |-- LabButton.tsx
+|   |   |   |   |-- LabCard.tsx
+|   |   |   |   |-- LabInput.tsx
+|   |   |   |   |-- Layout.tsx
+|   |   |   |   |-- MacrosCard.tsx
+|   |   |   |   |-- NavBar.tsx
+|   |   |   |   |-- PreFooter.tsx
+|   |   |   |   |-- ProtectedRoute.tsx
+|   |   |   |   +-- WorkoutModal.tsx
+|   |   |   |-- contexts/
+|   |   |   |   +-- AuthContext.tsx
+|   |   |   |-- hooks/
+|   |   |   |   +-- useUsers.ts
+|   |   |   |-- lib/
+|   |   |   |   |-- firebase.ts
+|   |   |   |   |-- queryClient.ts
+|   |   |   |   +-- trpc.ts
+|   |   |   |-- pages/
+|   |   |   |   |-- DashboardPage.tsx
+|   |   |   |   |-- DiaryPage.tsx
+|   |   |   |   |-- LandingPage.tsx
+|   |   |   |   |-- OnboardingPage.tsx
+|   |   |   |   |-- ProfilePage.tsx
+|   |   |   |   |-- ProgressPage.tsx
+|   |   |   |   |-- SignInPage.tsx
+|   |   |   |   +-- SignUpPage.tsx
+|   |   |   |-- providers/
+|   |   |   |   +-- QueryProvider.tsx
+|   |   |   |-- test/
+|   |   |   |   +-- setup.ts
+|   |   |   |-- App.tsx
+|   |   |   |-- main.tsx
+|   |   |   +-- style.css
+|   |   |-- index.html
+|   |   |-- postcss.config.js
+|   |   |-- tailwind.config.js
+|   |   +-- vite.config.ts
+|   +-- functions/                      # tRPC backend
+|       |-- scripts/
+|       |   +-- seed-system.ts          # Seed system exercises
+|       |-- src/
+|       |   |-- trpc/
+|       |   |   |-- routers/
+|       |   |   |   |-- exercise.ts
+|       |   |   |   |-- log.ts
+|       |   |   |   |-- user.ts
+|       |   |   |   +-- index.ts
+|       |   |   |-- context.ts
+|       |   |   |-- router.ts
+|       |   |   +-- trpc.ts
+|       |   +-- index.ts
+|       +-- tsconfig.json
+|-- packages/
+|   |-- config/                         # Shared runtime config
+|   |   +-- tsconfig.json
+|   |-- eslint-config/                  # Shared ESLint rules
+|   |   +-- index.js
+|   |-- shared/                         # Shared schemas, constants, utilities
+|   |   +-- src/
+|   |       |-- constants/
+|   |       |   |-- muscles.ts
+|   |       |   |-- programs.ts
+|   |       |   +-- recipes.ts
+|   |       |-- schemas/
+|   |       |   |-- activity-log.ts
+|   |       |   |-- exercise.ts
+|   |       |   |-- muscle-state.ts
+|   |       |   +-- user.ts
+|   |       |-- utils/
+|   |       |   |-- bmr.ts
+|   |       |   |-- date.ts
+|   |       |   |-- food-macros.ts
+|   |       |   |-- heatmap.ts
+|   |       |   |-- macros.ts
+|   |       |   +-- tdee.ts
+|   |       +-- index.ts
+|   |-- typescript-config/              # Shared TypeScript configs
+|   |   |-- base.json
+|   |   +-- vite.json
+|   +-- ui/                             # Shared React component library
+|       |-- components/
+|       |   |-- ui/
+|       |   |   |-- button.tsx
+|       |   |   +-- card.tsx
+|       |   |-- Counter.tsx
+|       |   +-- Header.tsx
+|       |-- lib/
+|       |   +-- utils.ts
+|       |-- test/
+|       |   +-- setup.ts
+|       +-- index.ts
+|-- docs/
+|   |-- ci-cd/
+|   |   |-- CI-CD-Pipeline-Guide.md
+|   |   |-- CI.md
+|   |   |-- Deploy-Dev.md
+|   |   |-- Deploy-Main.md
+|   |   +-- Deploy-Stage.md
+|   +-- project-definition/
+|       |-- backend-doc
+|       |-- frontend-doc
+|       |-- landing-page
+|       |-- pdd
+|       |-- tdd
+|       |-- todo
+|       +-- todoFinal
+|-- scripts/
+|   +-- setup-wif.sh                    # Workload Identity Federation setup
+|-- .env.example
+|-- .eslintrc.cjs
+|-- .firebaserc
+|-- .gitignore
+|-- .npmrc
+|-- .prettierignore
+|-- .prettierrc
+|-- .syncpackrc.json
+|-- CONTRIBUTING.md
+|-- firebase.json
+|-- firestore.indexes.json
+|-- firestore.rules
+|-- package.json
+|-- pnpm-lock.yaml
+|-- pnpm-workspace.yaml
++-- turbo.json
 ```
 
-## Quick Start
+---
+
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm 8+
+- Node.js 20 or higher
+- pnpm 8 or higher
+- A Firebase project with Authentication and Firestore enabled
 
 ### Installation
 
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd hytel-react-boilerplate
+cd DCD
 
 # Install dependencies
 pnpm install
+
+# Copy the environment template and fill in your Firebase credentials
+cp .env.example .env
 ```
 
 ### Development
 
 ```bash
-# Start the development server
+# Start all dev servers
 pnpm dev
-# Opens at http://localhost:5173
 
-# Run all quality checks
-pnpm precheck
-
-# Run tests
-pnpm test
-
-# Build for production
-pnpm build
-
-# Lint code
-pnpm lint
-
-# Format code
-pnpm format
+# The web app will open at http://localhost:5173
 ```
 
-## Key Features
+---
 
-### Shared Components (`packages/ui`)
+## Available Scripts
 
-Components in `@repo/ui` can be used by any app in the monorepo:
+| Command              | Description                                          |
+| -------------------- | ---------------------------------------------------- |
+| `pnpm dev`           | Start all development servers                        |
+| `pnpm build`         | Build all packages for production                    |
+| `pnpm test`          | Run all tests across the monorepo                    |
+| `pnpm test:coverage` | Run tests with coverage report                       |
+| `pnpm lint`          | Lint all packages                                    |
+| `pnpm lint:fix`      | Auto-fix lint issues                                 |
+| `pnpm format`        | Format code with Prettier                            |
+| `pnpm format:check`  | Check code formatting without writing                |
+| `pnpm typecheck`     | Run TypeScript type checking across all packages     |
+| `pnpm precheck`      | Run full quality gate (lint, typecheck, build, test)  |
+| `pnpm changeset`     | Create a changeset entry for versioning              |
+| `pnpm sync:lint`     | Check dependency version consistency via Syncpack    |
+| `pnpm sync:fix`      | Auto-fix dependency version mismatches               |
 
-```tsx
-import { Header } from '@repo/ui/Header'
-import { Button } from '@repo/ui/Button'
-import { Card, CardHeader, CardContent } from '@repo/ui/Card'
+---
+
+## Features
+
+### Landing Page
+- Animated typewriter hero with rotating keywords (Discipline, Commitment, Dedication)
+- Dynamic background image carousel with Framer Motion transitions
+- Feature showcase and about sections
+
+### Authentication
+- Email/password sign-up and sign-in via Firebase Auth
+- Persistent sessions across browser refreshes
+- Protected routes that redirect unauthenticated users
+
+### Onboarding
+- First-time user profile setup (display name, sport, physical stats)
+- Used to personalize the dashboard and calculate nutritional baselines
+
+### Dashboard
+- Central hub summarizing daily activity at a glance
+- Quick-access navigation to Diary, Progress, and Profile
+
+### Diary (Daily Log)
+- Unified daily view of all training and nutrition entries
+- Strength logging with sets, reps, and weight for progressive overload tracking
+- Skill/drill logging with attempts vs. makes for accuracy tracking
+- Food logging organized by meal category (Breakfast, Lunch, Dinner)
+- Date picker navigation to browse historical entries
+- Body heatmap showing which muscle groups were trained
+
+### Progress and Analytics
+- Workout consistency chart
+- Drill performance chart (accuracy trends over time)
+- Macro adherence chart
+- Activity heatmap calendar color-coded by training type
+
+### Profile
+- View and edit personal information
+- Manage account settings
+
+---
+
+## Architecture
+
+The application follows a monorepo architecture powered by Turborepo and pnpm workspaces.
+
+### Apps
+
+- **web** -- The React frontend built with Vite. Contains all pages, components, routing, and client-side state management.
+- **functions** -- The tRPC backend providing type-safe API procedures. Connects to Firestore via Firebase Admin SDK.
+
+### Packages (Shared Libraries)
+
+- **@repo/shared** -- Zod schemas, constants (muscle groups, programs, recipes), and utility functions (BMR, TDEE, macros, heatmap logic) used by both frontend and backend.
+- **@repo/ui** -- Reusable React components including Shadcn UI primitives (Button, Card) and custom components (Header, Counter).
+- **@repo/config** -- Shared runtime configuration.
+- **@repo/eslint-config** -- Centralized ESLint rules for consistent code style.
+- **@repo/typescript-config** -- Shared TypeScript compiler options (base and Vite variants).
+
+### Data Flow
+
+```
+React (web) --> tRPC Client --> tRPC Server (functions) --> Firestore
+                   |                                            |
+            TanStack Query                             Firebase Admin SDK
+            (caching layer)                            (server-side access)
 ```
 
-### Type-Safe API (`apps/functions`)
+### Security
 
-tRPC provides end-to-end type safety:
-
-```tsx
-// Backend (apps/functions)
-export const userRouter = router({
-  create: publicProcedure
-    .input(CreateUserSchema)
-    .mutation(({ input }) => ({ id: 'new-id', ...input })),
-})
-
-// Frontend (apps/web)
-const { mutate } = trpc.user.create.useMutation()
-```
-
-### Shared Schemas (`packages/shared`)
-
-Zod schemas shared between frontend and backend:
-
-```tsx
-import { UserSchema, CreateUserSchema } from '@repo/shared'
-
-// Type-safe validation everywhere!
-const user = UserSchema.parse(data)
-```
-
-## Scripts Reference
-
-| Command              | Description                                   |
-| -------------------- | --------------------------------------------- |
-| `pnpm dev`           | Start development servers                     |
-| `pnpm build`         | Build all packages for production             |
-| `pnpm test`          | Run all tests                                 |
-| `pnpm test:coverage` | Run tests with coverage report                |
-| `pnpm lint`          | Lint all packages                             |
-| `pnpm lint:fix`      | Auto-fix lint issues                          |
-| `pnpm format`        | Format code with Prettier                     |
-| `pnpm format:check`  | Check code formatting                         |
-| `pnpm typecheck`     | Run TypeScript type checking                  |
-| `pnpm precheck`      | Run all checks (lint, typecheck, build, test) |
-| `pnpm changeset`     | Create a changeset for versioning             |
-| `pnpm sync:lint`     | Check dependency version consistency          |
-| `pnpm sync:fix`      | Fix dependency version mismatches             |
+- Firestore Security Rules enforce per-user data isolation (`request.auth.uid == userId`)
+- Exercise library supports a hybrid model: system-wide exercises readable by all, user-created exercises private to the owner
+- tRPC middleware verifies Firebase ID tokens before processing writes
 
 ---
 
 ## CI/CD Pipeline
 
-This template includes a **fully configured CI/CD pipeline** using GitHub Actions and Workload Identity Federation (WIF) for secure deployments.
+Fully configured GitHub Actions workflows with Workload Identity Federation for keyless GCP authentication.
 
 ### Branch Strategy
 
 | Branch  | Environment | Deployment                 |
 | ------- | ----------- | -------------------------- |
-| `dev`   | Development | Auto on push               |
-| `stage` | Staging     | Auto on push               |
-| `main`  | Production  | Manual (with confirmation) |
+| `dev`   | Development | Automatic on push          |
+| `stage` | Staging     | Automatic on push          |
+| `main`  | Production  | Manual trigger with confirmation |
 
-### GitHub Actions Workflows
+### Workflows
 
-| Workflow                | Trigger         | Purpose                              |
-| ----------------------- | --------------- | ------------------------------------ |
-| `ci.yml`                | PR & push       | Lint, typecheck, build, test         |
-| `deploy-dev.yml`        | Push to `dev`   | Deploy to development                |
-| `deploy-stage.yml`      | Push to `stage` | Deploy to staging                    |
-| `deploy-main.yml`       | Manual          | Deploy to production                 |
-| `release.yml`           | Push to `main`  | Automated versioning with Changesets |
-| `dependency-review.yml` | PR              | Check for vulnerable dependencies    |
-
-### Workload Identity Federation (WIF)
-
-All deployments use **keyless authentication** with GCP:
-
-- No stored service account keys
-- Short-lived tokens (expire in ~1 hour)
-- Full audit trail in GCP
+| Workflow                 | Trigger         | Purpose                              |
+| ------------------------ | --------------- | ------------------------------------ |
+| `ci.yml`                 | PR and push     | Lint, typecheck, build, test         |
+| `deploy-dev.yml`         | Push to `dev`   | Deploy to development environment    |
+| `deploy-stage.yml`       | Push to `stage` | Deploy to staging environment        |
+| `deploy-main.yml`        | Manual          | Deploy to production                 |
+| `release.yml`            | Push to `main`  | Automated versioning with Changesets |
+| `dependency-review.yml`  | PR              | Scan for vulnerable dependencies     |
 
 ### Required GitHub Secrets
 
-Configure these in your repository settings:
+| Secret                           | Description                 |
+| -------------------------------- | --------------------------- |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | WIF provider resource path  |
+| `GCP_SA_EMAIL`                   | Service account email       |
 
-| Secret                           | Description           |
-| -------------------------------- | --------------------- |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | WIF provider path     |
-| `GCP_SA_EMAIL`                   | Service account email |
-
-### Setup Instructions
-
-1. **Configure WIF** using `scripts/setup-wif.sh`
-2. **Add secrets** to GitHub repository settings
-3. **Create environments** (`dev`, `stage`, `main`) in GitHub settings
-4. **Push to branches** to trigger deployments
-
-See [docs/ci-cd/CI-CD-Pipeline-Guide.md](docs/ci-cd/CI-CD-Pipeline-Guide.md) for detailed setup instructions.
+See [CI/CD Pipeline Guide](docs/ci-cd/CI-CD-Pipeline-Guide.md) for full setup instructions.
 
 ---
 
-## Development Tools
+## Environment Variables
 
-### Git Hooks (Husky)
+Copy `.env.example` to `.env` and configure the following:
 
-Pre-commit hooks automatically run:
-
-- ESLint on staged `.ts`/`.tsx` files
-- Prettier on staged files
-
-### Changesets
-
-Semantic versioning for the monorepo:
-
-```bash
-# Create a changeset when you make changes
-pnpm changeset
-
-# The release workflow handles version bumps automatically
-```
-
-### Syncpack
-
-Dependency consistency across packages:
-
-```bash
-pnpm sync:lint   # Check for mismatches
-pnpm sync:fix    # Auto-fix mismatches
-pnpm sync:list   # List all versions
-```
+| Variable                            | Description                        |
+| ----------------------------------- | ---------------------------------- |
+| `NODE_ENV`                          | Runtime environment                |
+| `VITE_API_URL`                      | Backend API endpoint               |
+| `VITE_FIREBASE_API_KEY`             | Firebase client API key            |
+| `VITE_FIREBASE_AUTH_DOMAIN`         | Firebase Auth domain               |
+| `VITE_FIREBASE_PROJECT_ID`          | Firebase project ID                |
+| `VITE_FIREBASE_STORAGE_BUCKET`     | Firebase Storage bucket            |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID`| Firebase Cloud Messaging sender ID |
+| `VITE_FIREBASE_APP_ID`             | Firebase app ID                    |
 
 ---
 
 ## Testing
 
-Each package has its own tests:
+Tests are co-located with source files and run via Vitest.
 
 ```bash
 # Run all tests
 pnpm test
 
-# Run tests for specific package
+# Run tests for a specific package
 pnpm --filter web test
+pnpm --filter @repo/functions test
 pnpm --filter @repo/ui test
 pnpm --filter @repo/shared test
-pnpm --filter @repo/functions test
 
 # Run with coverage
 pnpm test:coverage
@@ -263,61 +409,25 @@ pnpm test:coverage
 
 ---
 
-## Adding New Packages
-
-### New App
-
-```bash
-mkdir apps/new-app
-cd apps/new-app
-pnpm init
-```
-
-### New Shared Package
-
-```bash
-mkdir packages/new-package
-cd packages/new-package
-pnpm init
-```
-
-Packages are auto-discovered via `pnpm-workspace.yaml` (configured for `apps/*` and `packages/*`).
-
----
-
 ## Version Requirements
 
-| Tool         | Minimum Version        |
-| ------------ | ---------------------- |
-| Node.js      | 20.x                   |
-| pnpm         | 8.x                    |
-| Turbo        | 2.x                    |
-| TypeScript   | 5.x                    |
-| Vitest       | 2.x                    |
-| ESLint       | 8.x                    |
-| Prettier     | 3.x                    |
-| Firebase CLI | 13.x (for deployment)  |
-| gcloud CLI   | Latest (for WIF setup) |
-
----
-
-## Useful Links
-
-- [Turborepo Documentation](https://turbo.build/repo/docs)
-- [Shadcn UI Components](https://ui.shadcn.com)
-- [tRPC Documentation](https://trpc.io)
-- [TanStack Query](https://tanstack.com/query)
-- [Tailwind CSS](https://tailwindcss.com)
-- [Vite](https://vitejs.dev)
-- [Changesets](https://github.com/changesets/changesets)
-- [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation)
+| Tool         | Minimum Version |
+| ------------ | --------------- |
+| Node.js      | 20.x            |
+| pnpm         | 8.x             |
+| Turbo        | 2.x             |
+| TypeScript   | 5.x             |
+| Vitest       | 2.x             |
+| ESLint       | 8.x             |
+| Prettier     | 3.x             |
+| Firebase CLI | 13.x            |
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow and guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow, branching strategy, and code review guidelines.
 
 ---
 
-Built with ❤️ using Turborepo
+Built with Turborepo. Boilerplate by Hytel.
