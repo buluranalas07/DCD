@@ -52,163 +52,31 @@ A training and nutrition tracking web application built for the hybrid athlete. 
 
 ```
 DCD/
-|-- .changeset/                         # Changeset config for versioning
-|-- .github/
-|   |-- ISSUE_TEMPLATE/
-|   |   |-- bug_report.md
-|   |   +-- feature_request.md
-|   |-- workflows/
-|   |   |-- ci.yml                      # Lint, typecheck, build, test
-|   |   |-- deploy-dev.yml              # Auto-deploy on push to dev
-|   |   |-- deploy-stage.yml            # Auto-deploy on push to stage
-|   |   |-- deploy-main.yml             # Manual production deploy
-|   |   |-- release.yml                 # Automated versioning
-|   |   +-- dependency-review.yml       # Vulnerability scanning on PRs
-|   |-- CODEOWNERS
-|   |-- PULL_REQUEST_TEMPLATE.md
-|   +-- SECURITY.md
-|-- .husky/
-|   +-- pre-commit                      # Lint-staged hook
+|-- .github/                # CI/CD workflows, issue/PR templates, CODEOWNERS
+|-- .husky/                 # Git hooks (pre-commit lint-staged)
 |-- apps/
-|   |-- web/                            # React frontend (Vite)
-|   |   |-- public/
-|   |   |-- src/
-|   |   |   |-- components/
-|   |   |   |   |-- charts/
-|   |   |   |   |   |-- DrillPerformanceChart.tsx
-|   |   |   |   |   |-- MacroAdherenceChart.tsx
-|   |   |   |   |   +-- WorkoutConsistencyChart.tsx
-|   |   |   |   |-- About.tsx
-|   |   |   |   |-- BodyHeatmap.tsx
-|   |   |   |   |-- Calendar.tsx
-|   |   |   |   |-- Features.tsx
-|   |   |   |   |-- FoodModal.tsx
-|   |   |   |   |-- Footer.tsx
-|   |   |   |   |-- Hero.tsx
-|   |   |   |   |-- LabButton.tsx
-|   |   |   |   |-- LabCard.tsx
-|   |   |   |   |-- LabInput.tsx
-|   |   |   |   |-- Layout.tsx
-|   |   |   |   |-- MacrosCard.tsx
-|   |   |   |   |-- NavBar.tsx
-|   |   |   |   |-- PreFooter.tsx
-|   |   |   |   |-- ProtectedRoute.tsx
-|   |   |   |   +-- WorkoutModal.tsx
-|   |   |   |-- contexts/
-|   |   |   |   +-- AuthContext.tsx
-|   |   |   |-- hooks/
-|   |   |   |   +-- useUsers.ts
-|   |   |   |-- lib/
-|   |   |   |   |-- firebase.ts
-|   |   |   |   |-- queryClient.ts
-|   |   |   |   +-- trpc.ts
-|   |   |   |-- pages/
-|   |   |   |   |-- DashboardPage.tsx
-|   |   |   |   |-- DiaryPage.tsx
-|   |   |   |   |-- LandingPage.tsx
-|   |   |   |   |-- OnboardingPage.tsx
-|   |   |   |   |-- ProfilePage.tsx
-|   |   |   |   |-- ProgressPage.tsx
-|   |   |   |   |-- SignInPage.tsx
-|   |   |   |   +-- SignUpPage.tsx
-|   |   |   |-- providers/
-|   |   |   |   +-- QueryProvider.tsx
-|   |   |   |-- test/
-|   |   |   |   +-- setup.ts
-|   |   |   |-- App.tsx
-|   |   |   |-- main.tsx
-|   |   |   +-- style.css
-|   |   |-- index.html
-|   |   |-- postcss.config.js
-|   |   |-- tailwind.config.js
-|   |   +-- vite.config.ts
-|   +-- functions/                      # tRPC backend
-|       |-- scripts/
-|       |   +-- seed-system.ts          # Seed system exercises
-|       |-- src/
-|       |   |-- trpc/
-|       |   |   |-- routers/
-|       |   |   |   |-- exercise.ts
-|       |   |   |   |-- log.ts
-|       |   |   |   |-- user.ts
-|       |   |   |   +-- index.ts
-|       |   |   |-- context.ts
-|       |   |   |-- router.ts
-|       |   |   +-- trpc.ts
-|       |   +-- index.ts
-|       +-- tsconfig.json
-|-- packages/
-|   |-- config/                         # Shared runtime config
-|   |   +-- tsconfig.json
-|   |-- eslint-config/                  # Shared ESLint rules
-|   |   +-- index.js
-|   |-- shared/                         # Shared schemas, constants, utilities
+|   |-- web/                # React frontend (Vite + Tailwind CSS)
 |   |   +-- src/
-|   |       |-- constants/
-|   |       |   |-- muscles.ts
-|   |       |   |-- programs.ts
-|   |       |   +-- recipes.ts
-|   |       |-- schemas/
-|   |       |   |-- activity-log.ts
-|   |       |   |-- exercise.ts
-|   |       |   |-- muscle-state.ts
-|   |       |   +-- user.ts
-|   |       |-- utils/
-|   |       |   |-- bmr.ts
-|   |       |   |-- date.ts
-|   |       |   |-- food-macros.ts
-|   |       |   |-- heatmap.ts
-|   |       |   |-- macros.ts
-|   |       |   +-- tdee.ts
-|   |       +-- index.ts
-|   |-- typescript-config/              # Shared TypeScript configs
-|   |   |-- base.json
-|   |   +-- vite.json
-|   +-- ui/                             # Shared React component library
-|       |-- components/
-|       |   |-- ui/
-|       |   |   |-- button.tsx
-|       |   |   +-- card.tsx
-|       |   |-- Counter.tsx
-|       |   +-- Header.tsx
-|       |-- lib/
-|       |   +-- utils.ts
-|       |-- test/
-|       |   +-- setup.ts
-|       +-- index.ts
-|-- docs/
-|   |-- ci-cd/
-|   |   |-- CI-CD-Pipeline-Guide.md
-|   |   |-- CI.md
-|   |   |-- Deploy-Dev.md
-|   |   |-- Deploy-Main.md
-|   |   +-- Deploy-Stage.md
-|   +-- project-definition/
-|       |-- backend-doc
-|       |-- frontend-doc
-|       |-- landing-page
-|       |-- pdd
-|       |-- tdd
-|       |-- todo
-|       +-- todoFinal
-|-- scripts/
-|   +-- setup-wif.sh                    # Workload Identity Federation setup
-|-- .env.example
-|-- .eslintrc.cjs
-|-- .firebaserc
-|-- .gitignore
-|-- .npmrc
-|-- .prettierignore
-|-- .prettierrc
-|-- .syncpackrc.json
-|-- CONTRIBUTING.md
-|-- firebase.json
-|-- firestore.indexes.json
-|-- firestore.rules
-|-- package.json
-|-- pnpm-lock.yaml
-|-- pnpm-workspace.yaml
-+-- turbo.json
+|   |       |-- components/ # UI components, charts, modals, layout
+|   |       |-- contexts/   # Auth context (Firebase)
+|   |       |-- hooks/      # Custom React hooks
+|   |       |-- lib/        # Firebase client, tRPC client, query client
+|   |       |-- pages/      # Landing, SignIn, SignUp, Onboarding, Dashboard, Diary, Progress, Profile
+|   |       +-- providers/  # TanStack Query provider
+|   +-- functions/          # tRPC backend (Firebase Admin + Firestore)
+|       +-- src/trpc/
+|           +-- routers/    # User, Exercise, and Log API routes
+|-- packages/
+|   |-- shared/             # Zod schemas, constants (muscles, programs, recipes), utilities (BMR, TDEE, macros)
+|   |-- ui/                 # Shared component library (Shadcn UI primitives + custom components)
+|   |-- config/             # Shared runtime configuration
+|   |-- eslint-config/      # Centralized ESLint rules
+|   +-- typescript-config/  # Shared TypeScript compiler options
+|-- docs/                   # CI/CD guides and project definition documents
+|-- scripts/                # Infrastructure setup scripts (WIF)
+|-- firestore.rules         # Firestore security rules
+|-- turbo.json              # Turborepo pipeline config
++-- pnpm-workspace.yaml     # Workspace definition
 ```
 
 ---
