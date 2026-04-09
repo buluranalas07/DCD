@@ -2,6 +2,8 @@
 
 A training and nutrition tracking web application built for the hybrid athlete. DCD (Discipline, Commitment, Dedication) provides a high-utility, zero-friction platform to log workouts, track nutrition, monitor progress, and visualize training consistency -- all through a clean, modern interface.
 
+**Live Demo:** [https://dcd-lab.web.app](https://dcd-lab.web.app/)
+
 > **Boilerplate Disclosure:** This project was bootstrapped using the [Hytel](https://github.com/user/hytel) monorepo boilerplate, which provides the foundational monorepo structure, CI/CD pipelines, shared configuration packages, and development tooling. Application-specific features, pages, components, and business logic were built on top of that foundation.
 
 ---
